@@ -1,0 +1,11 @@
+{% autoescape off %}Hello{% if user.full_name %} {{ user.full_name }}{% endif %},
+
+You've been invited to Customer Wise. Open this link to accept and sign in:
+
+{{ link }}
+
+The invitation expires on {{ expires_at|date:"j F Y" }}. After that, ask your Customer Wise contact for a new one.
+
+If you weren't expecting this, you can ignore this email.
+
+Customer Wise{% endautoescape %}

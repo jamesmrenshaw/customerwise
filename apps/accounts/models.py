@@ -90,3 +90,62 @@ class User(AbstractBaseUser, PermissionsMixin):
         if self.role != self.Role.STAFF:
             self.is_superuser = False
         super().save(*args, **kwargs)
+
+
+class TokenQuerySet(models.QuerySet):
+    def usable(self):
+        return self.filter(expires_at__gt=timezone.now(), used_at__isnull=True)
+
+
+class BaseToken(models.Model):
+    """A single-use secret sent by email. Only a SHA-256 hash of the secret is stored."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    token_hash = models.CharField(max_length=64, unique=True, editable=False)
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+    expires_at = models.DateTimeField()
+    used_at = models.DateTimeField(null=True, blank=True)
+
+    objects = TokenQuerySet.as_manager()
+
+    class Meta:
+        abstract = True
+        ordering = ["-created_at"]
+
+    @property
+    def is_usable(self):
+        return self.used_at is None and self.expires_at > timezone.now()
+
+
+class Invitation(BaseToken):
+    """An invitation to a user created by staff in admin. Valid for 7 days (D02)."""
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="invitations")
+    sent_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
+    revoked_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"Invitation for {self.user.email}"
+
+    @property
+    def is_usable(self):
+        return super().is_usable and self.revoked_at is None
+
+    @property
+    def status(self):
+        if self.used_at:
+            return "Accepted"
+        if self.revoked_at:
+            return "Replaced"
+        if self.expires_at <= timezone.now():
+            return "Expired"
+        return "Pending"
+
+
+class LoginToken(BaseToken):
+    """A magic sign-in link. Single use, valid for 15 minutes (D02)."""
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="login_tokens")
+
+    def __str__(self):
+        return f"Sign-in link for {self.user.email}"

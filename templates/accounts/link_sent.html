@@ -1,0 +1,8 @@
+{% extends "accounts/_card.html" %}
+{% block title %}Check your email · Customer Wise{% endblock %}
+{% block card %}
+  <h1>Check your email</h1>
+  <p>If <strong>{{ email }}</strong> has been invited, we have sent it a sign-in link. The link works once and expires in 15 minutes.</p>
+  <p class="hint">Not arrived? Check your junk folder, then try again.</p>
+  <a class="btn btn--block" href="{% url 'accounts:login' %}">Use a different email</a>
+{% endblock %}

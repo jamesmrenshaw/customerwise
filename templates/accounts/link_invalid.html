@@ -1,0 +1,7 @@
+{% extends "accounts/_card.html" %}
+{% block title %}Link expired · Customer Wise{% endblock %}
+{% block card %}
+  <h1>This sign-in link has expired</h1>
+  <p>Sign-in links work once and only for 15 minutes. Ask for a new one.</p>
+  <a class="btn btn--primary btn--block" href="{% url 'accounts:login' %}">Get a new sign-in link</a>
+{% endblock %}

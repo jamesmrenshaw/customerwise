@@ -1,0 +1,8 @@
+{% extends "accounts/_card.html" %}
+{% block title %}Invitation expired · Customer Wise{% endblock %}
+{% block card %}
+  <h1>This invitation can't be used</h1>
+  <p>It may have expired, been replaced by a newer invitation, or already been accepted.</p>
+  <p>If you've already accepted it, sign in with your email address. Otherwise, ask your Customer Wise contact to send a new invitation.</p>
+  <a class="btn btn--primary btn--block" href="{% url 'accounts:login' %}">Go to sign in</a>
+{% endblock %}

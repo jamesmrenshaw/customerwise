@@ -21,6 +21,11 @@
       {% if user.is_authenticated %}
         <div class="site-header__user">
           <span>{{ user }}{% if user.is_staff %} · Customer Wise{% else %} · Shopper{% endif %}</span>
+          {% if user.is_staff %}<a href="{% url 'admin:index' %}">Admin</a>{% endif %}
+          <form method="post" action="{% url 'accounts:logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn--link">Sign out</button>
+          </form>
         </div>
       {% endif %}
     </div>

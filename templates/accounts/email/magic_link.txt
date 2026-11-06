@@ -1,0 +1,9 @@
+{% autoescape off %}Hello{% if user.full_name %} {{ user.full_name }}{% endif %},
+
+Open this link to sign in to Customer Wise:
+
+{{ link }}
+
+It works once and expires in 15 minutes. If you didn't ask to sign in, you can ignore this email.
+
+Customer Wise{% endautoescape %}

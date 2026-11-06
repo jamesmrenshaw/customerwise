@@ -3,16 +3,16 @@
 {% block content %}
   <div>
     <h1>Customer Wise</h1>
-    <p class="lead">The shopper workspace pilot is being built. Sign-in comes next.</p>
+    {% if user.is_authenticated %}
+      <p class="lead">You're signed in as {{ user.email }}.
+        {% if user.is_staff %}Project setup is in <a href="{% url 'admin:index' %}">admin</a>; fieldwork monitoring is coming next.
+        {% else %}Your assignments will appear here.{% endif %}
+      </p>
+    {% else %}
+      <p class="lead">The shopper workspace for Customer Wise B2B research.</p>
+    {% endif %}
   </div>
-  <div class="card">
-    <p>Status tags use the Customer Wise palette:</p>
-    <p>
-      <span class="tag tag--none">Not started</span>
-      <span class="tag tag--active">Initial contact</span>
-      <span class="tag tag--warn">Returned</span>
-      <span class="tag tag--done">Complete</span>
-      <span class="tag tag--shopper">Added by shopper</span>
-    </p>
-  </div>
+  {% if not user.is_authenticated %}
+    <p><a class="btn btn--primary" href="{% url 'accounts:login' %}">Sign in</a></p>
+  {% endif %}
 {% endblock %}

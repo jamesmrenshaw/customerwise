@@ -9,6 +9,8 @@ SECRET_KEY = env("DJANGO_SECRET_KEY")
 # Railway's health check calls the service with this Host header.
 ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=[]) + ["healthcheck.railway.app"]
 CSRF_TRUSTED_ORIGINS = env.list("DJANGO_CSRF_TRUSTED_ORIGINS", default=[])
+# Railway provides RAILWAY_PUBLIC_DOMAIN to every service with a domain.
+SITE_URL = env("SITE_URL", default="https://" + env("RAILWAY_PUBLIC_DOMAIN", default="localhost"))
 
 # Railway terminates TLS at its proxy.
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")

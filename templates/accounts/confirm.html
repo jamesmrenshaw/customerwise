@@ -1,0 +1,15 @@
+{% extends "accounts/_card.html" %}
+{% block title %}{{ action }} · Customer Wise{% endblock %}
+{% block card %}
+  {% if invitation %}
+    <h1>Welcome to Customer Wise</h1>
+    <p>You've been invited as <strong>{{ invitation.user.email }}</strong>. Continue to accept the invitation and sign in.</p>
+  {% else %}
+    <h1>Sign in to Customer Wise</h1>
+    <p>Continue to finish signing in.</p>
+  {% endif %}
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn--primary btn--block">Continue</button>
+  </form>
+{% endblock %}

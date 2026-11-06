@@ -69,6 +69,10 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "accounts.User"
 
 # Sign-in is by magic link or Microsoft/Google (D02). Users have no passwords.
+LOGIN_URL = "accounts:login"
+LOGIN_REDIRECT_URL = "core:home"
+# Absolute links in emails (invitations, sign-in links).
+SITE_URL = env("SITE_URL", default="http://localhost:8000")
 SESSION_COOKIE_AGE = 60 * 60 * 24 * 14  # 14 days (D02)
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
