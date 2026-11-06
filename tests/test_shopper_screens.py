@@ -126,7 +126,7 @@ def test_shopper_cannot_set_complete(as_sam, assignment):
     response = as_sam.post(
         reverse("shopper:assignment_stage", args=[assignment.pk]), {"stage": "complete"}, follow=True
     )
-    assert "Complete is set automatically" in response.content.decode()
+    assert "In review and Complete are set by submitting" in response.content.decode()
     assignment.refresh_from_db()
     assert assignment.stage == Assignment.Stage.NOT_STARTED
 

@@ -14,6 +14,7 @@ from django.views.decorators.http import require_POST
 from apps.core.access import staff_required
 from apps.core.ui import dialog, done, posted
 from apps.fieldwork.models import Activity, Assignment
+from apps.fieldwork.services import LOCKED_STAGES
 from apps.projects.models import Project
 from apps.questionnaires.models import Question
 from apps.reports import review
@@ -36,11 +37,8 @@ FIELDWORK_FILTERS = [
 def _row(assignment, now):
     report = getattr(assignment, "report", None)
     open_ = assignment.is_open
-    stalled = (
-        open_
-        and assignment.stage != Assignment.Stage.COMPLETE
-        and assignment.last_activity_at < now - STALLED_AFTER
-    )
+    waiting_on_shopper = open_ and assignment.stage not in LOCKED_STAGES
+    stalled = waiting_on_shopper and assignment.last_activity_at < now - STALLED_AFTER
     status = report.status if report else None
     return {
         "a": assignment,
@@ -51,7 +49,7 @@ def _row(assignment, now):
         "returned": status == Report.Status.RETURNED,
         "accepted": status == Report.Status.ACCEPTED,
         "unable": assignment.closed_reason == Assignment.ClosedReason.UNABLE,
-        "in_progress": open_ and assignment.stage != Assignment.Stage.COMPLETE,
+        "in_progress": waiting_on_shopper,
         "by_shopper": assignment.target.added_by_shopper,
     }
 
@@ -178,10 +176,15 @@ def review_report(request, pk):
     by_key = {}
     for c in drafts:
         by_key.setdefault(c.question_key, []).append(c)
+    previous = list(review.previous_round(report, submission))
+    previous_by_key = {}
+    for c in previous:
+        previous_by_key.setdefault(c.question_key, []).append(c)
     editing = request.GET.get("edit", "")
     for section in [{"items": document["key_facts"]}, *document["sections"]]:
         for item in section["items"]:
             item["comments"] = by_key.get(item["key"], [])
+            item["previous"] = previous_by_key.get(item["key"], [])
             item["commenting"] = editing == item["key"]
     sent = report.comments.filter(sent_at__isnull=False).select_related("author", "submission", "question")
     evidence_ids = {e["id"] for e in submission.snapshot.get("evidence", [])}
@@ -196,6 +199,8 @@ def review_report(request, pk):
             "document": document,
             "draft_count": len(drafts),
             "general_drafts": by_key.get("", []),
+            "previous_general": previous_by_key.get("", []),
+            "previous_count": len(previous),
             "can_review": report.status == Report.Status.SUBMITTED,
             "evidence": report.assignment.evidence.filter(pk__in=evidence_ids).order_by("created_at"),
             "notes": submission.snapshot.get("notes", ""),

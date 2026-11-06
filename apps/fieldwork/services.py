@@ -87,7 +87,8 @@ def archive_target(target, *, note=""):
 
 # --- Shopper actions (CW-028 to CW-032, MVP-01) ---------------------------------------
 
-# Shoppers set these themselves and can step back (D08). Complete is set only by submitting.
+# Shoppers set these themselves and can step back (D08). In review is set by submitting the
+# report and Complete by Customer Wise accepting it (refined 6 Nov 2026).
 MANUAL_STAGES = [
     Assignment.Stage.NOT_STARTED,
     Assignment.Stage.PLANNED,
@@ -97,9 +98,12 @@ MANUAL_STAGES = [
 ]
 
 
+LOCKED_STAGES = {Assignment.Stage.IN_REVIEW, Assignment.Stage.COMPLETE}
+
+
 def shopper_can_edit(assignment):
-    """Open and not yet submitted. (Returned reports reopen editing once reports exist.)"""
-    return assignment.is_open and assignment.stage != Assignment.Stage.COMPLETE
+    """Open and not submitted. Submitting locks it (In review); returning the report reopens it."""
+    return assignment.is_open and assignment.stage not in LOCKED_STAGES
 
 
 def _require_editable(assignment):
@@ -116,7 +120,9 @@ def _touch(assignment):
 def set_stage(assignment, stage):
     _require_editable(assignment)
     if stage not in MANUAL_STAGES:
-        raise ValidationError("Complete is set automatically when you submit the report.")
+        raise ValidationError(
+            "In review and Complete are set by submitting the report and by Customer Wise accepting it."
+        )
     assignment.stage = stage
     assignment.last_activity_at = timezone.now()
     assignment.save(update_fields=["stage", "last_activity_at", "updated_at"])

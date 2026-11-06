@@ -1,3 +1,10 @@
+{% for c in item.previous %}
+  <div class="previous-comment">
+    <div><span class="muted small">Your earlier comment ({{ c.sent_at|date:"j M" }}):</span> {{ c.text|linebreaksbr }}</div>
+    {% if c.reply %}<div class="shopper-reply"><strong>{{ assignment.shopper }} replied:</strong> {{ c.reply|linebreaksbr }}</div>
+    {% else %}<div class="muted small">No reply; check whether the answer changed.</div>{% endif %}
+  </div>
+{% endfor %}
 {% for c in item.comments %}
   <div class="review-comment">
     <div class="review-comment__head"><strong>Your comment</strong> <span class="muted small">· not sent yet</span></div>

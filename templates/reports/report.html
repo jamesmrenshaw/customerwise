@@ -137,7 +137,8 @@
     {% if editable %}
       <div class="row">
         {% if section and not view %}<button class="btn" form="section-form" type="submit" name="go" value="save">Save draft</button>{% endif %}
-        <form method="post" action="{% url 'reports:submit' report.pk %}">{% csrf_token %}<button class="btn btn--primary" type="submit">{% if report.status == "returned" %}Resubmit{% else %}Submit{% endif %} to Customer Wise</button></form>
+        {% url 'reports:submit' report.pk as submit_url %}
+        <a class="btn btn--primary" href="{{ submit_url }}" hx-get="{{ submit_url }}" hx-target="#modal">{% if report.status == "returned" %}Resubmit{% else %}Submit{% endif %} to Customer Wise…</a>
       </div>
     {% endif %}
   </div>

@@ -74,6 +74,9 @@ class ReportSubmission(BaseModel):
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="+"
     )
     snapshot = models.JSONField()
+    shopper_comment = models.TextField(
+        blank=True, help_text="The shopper's comment for Customer Wise on submitting."
+    )
 
     class Meta:
         ordering = ["report", "-number"]
@@ -108,6 +111,8 @@ class ReviewComment(BaseModel):
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="+"
     )
     sent_at = models.DateTimeField(null=True, blank=True)
+    reply = models.TextField(blank=True, help_text="The shopper's reply, given when they resubmit.")
+    replied_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ["created_at"]

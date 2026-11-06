@@ -119,8 +119,12 @@ def snapshot(report):
 
 
 @transaction.atomic
-def submit(report, user):
-    """Submit the report: freeze a snapshot, set the assignment to Complete and lock editing."""
+def submit(report, user, *, comment="", replies=None):
+    """Submit for review: freeze a snapshot, move the assignment to In review and lock editing.
+
+    comment is the shopper's message for Customer Wise. replies maps returned ReviewComment ids to the
+    shopper's reply, for when they explain rather than (or as well as) change an answer.
+    """
     report = (
         Report.objects.select_for_update().select_related("assignment__target__project").get(pk=report.pk)
     )
@@ -128,15 +132,27 @@ def submit(report, user):
     problems = submission_problems(report, user)
     if problems:
         raise ValidationError([p["text"] for p in problems])
+    from .review import returned_comments
+
+    now = timezone.now()
+    for c in returned_comments(report):
+        reply = ((replies or {}).get(str(c.pk)) or "").strip()
+        if reply:
+            c.reply, c.replied_at = reply, now
+            c.save(update_fields=["reply", "replied_at", "updated_at"])
     report.version_no += 1
     report.status = Report.Status.SUBMITTED
-    report.submitted_at = timezone.now()
+    report.submitted_at = now
     report.save(update_fields=["version_no", "status", "submitted_at", "updated_at"])
     ReportSubmission.objects.create(
-        report=report, number=report.version_no, submitted_by=user, snapshot=snapshot(report)
+        report=report,
+        number=report.version_no,
+        submitted_by=user,
+        snapshot=snapshot(report),
+        shopper_comment=(comment or "").strip(),
     )
     Assignment.objects.filter(pk=report.assignment_id).update(
-        stage=Assignment.Stage.COMPLETE, returned=False, last_activity_at=timezone.now()
+        stage=Assignment.Stage.IN_REVIEW, returned=False, last_activity_at=now
     )
     return report
 

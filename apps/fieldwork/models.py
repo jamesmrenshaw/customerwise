@@ -24,7 +24,8 @@ class Assignment(BaseModel):
         INITIAL_CONTACT = "initial_contact", "Initial contact"
         FOLLOW_UP = "follow_up", "Follow up"
         REPORT_DRAFTING = "report_drafting", "Report drafting"
-        COMPLETE = "complete", "Complete"
+        IN_REVIEW = "in_review", "In review"  # set on submit; Customer Wise is reviewing
+        COMPLETE = "complete", "Complete"  # set when Customer Wise accepts the report
 
     class UnableReason(models.TextChoices):
         NO_RESPONSE = "no_response", "No response"

@@ -17,6 +17,15 @@ def draft_comments(report):
     return report.comments.filter(sent_at__isnull=True).select_related("question", "author")
 
 
+def previous_round(report, submission):
+    """Comments from the return before this submission, with any replies the shopper gave."""
+    if submission is None or submission.number < 2:
+        return ReviewComment.objects.none()
+    return report.comments.filter(
+        sent_at__isnull=False, submission__number=submission.number - 1
+    ).select_related("question", "author")
+
+
 def returned_comments(report):
     """Comments the shopper should act on: those sent when the latest submission was returned."""
     if report.status != Report.Status.RETURNED:
@@ -98,4 +107,8 @@ def accept_report(report, *, by):
     report.accepted_at = timezone.now()
     report.accepted_by = by
     report.save(update_fields=["status", "accepted_at", "accepted_by", "updated_at"])
+    # Only an accepted report makes the assignment Complete (refined 6 Nov 2026).
+    Assignment.objects.filter(pk=report.assignment_id).update(
+        stage=Assignment.Stage.COMPLETE, last_activity_at=report.accepted_at
+    )
     return report

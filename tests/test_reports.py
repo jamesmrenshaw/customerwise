@@ -207,9 +207,9 @@ def test_questions_from_another_version_are_refused(as_sam, report, project):
 
 def test_submit_lists_what_is_missing(as_sam, report):
     services.save_answer(report, q(report, "structure"), "Per user.")
-    response = as_sam.post(reverse("reports:submit", args=[report.pk]))
-    html = response.content.decode()
-    assert response.status_code == 400
+    response = as_sam.post(reverse("reports:submit", args=[report.pk]), **HTMX)
+    html = htmllib.unescape(response.content.decode())
+    assert response.status_code == 200
     assert "You can't submit yet" in html
     assert "Minimum users?" in html and "First enquiry" in html
     report.refresh_from_db()
@@ -219,7 +219,7 @@ def test_submit_lists_what_is_missing(as_sam, report):
 def test_submit_requires_the_latest_brief_to_be_confirmed(as_sam, report, project):
     projects.update_brief(project, "Approach as a genuine buyer.")
     answer_everything(report)
-    html = as_sam.post(reverse("reports:submit", args=[report.pk])).content.decode()
+    html = as_sam.post(reverse("reports:submit", args=[report.pk]), **HTMX).content.decode()
     assert "Confirm you have read the latest brief" in html
 
 
@@ -229,7 +229,7 @@ def test_submit_freezes_a_snapshot_completes_and_locks(as_sam, report, sam):
     assert "Report submitted to Customer Wise" in response.content.decode()
     report.refresh_from_db()
     assert report.status == Report.Status.SUBMITTED and report.version_no == 1
-    assert report.assignment.stage == Assignment.Stage.COMPLETE
+    assert report.assignment.stage == Assignment.Stage.IN_REVIEW
     submission = report.submissions.get()
     assert submission.snapshot["sections"][1]["questions"][0]["text"] == "<div>Per user, billed yearly.</div>"
     question = q(report, "structure")
@@ -443,3 +443,35 @@ def test_submitted_report_shows_formatted_answers(as_sam, report):
     ).content.decode()
     assert "<trix-editor" not in html
     assert "<div>Per <strong>user</strong></div><ul><li>Banded</li></ul>" in html
+
+
+def test_submit_dialog_takes_an_optional_comment(as_sam, report):
+    answer_everything(report)
+    dialog = htmllib.unescape(
+        as_sam.get(reverse("reports:submit", args=[report.pk]), **HTMX).content.decode()
+    )
+    assert "Comment for Customer Wise" in dialog and "Reply to Customer Wise" not in dialog
+    response = as_sam.post(
+        reverse("reports:submit", args=[report.pk]), {"comment": "Their pricing PDF is attached."}, **HTMX
+    )
+    assert response.status_code == 204
+    assert report.submissions.get().shopper_comment == "Their pricing PDF is attached."
+
+
+def test_submitted_report_is_locked_while_in_review(as_sam, report):
+    answer_everything(report)
+    services.submit(report, report.assignment.shopper)
+    report.assignment.refresh_from_db()
+    assert report.assignment.stage == Assignment.Stage.IN_REVIEW
+    html = htmllib.unescape(
+        as_sam.get(reverse("shopper:assignment", args=[report.assignment_id])).content.decode()
+    )
+    assert "Report submitted and in review" in html and "Add to log" not in html
+    assert (
+        as_sam.post(
+            reverse("shopper:assignment_stage", args=[report.assignment_id]), {"stage": "planned"}
+        ).status_code
+        == 302
+    )
+    report.assignment.refresh_from_db()
+    assert report.assignment.stage == Assignment.Stage.IN_REVIEW

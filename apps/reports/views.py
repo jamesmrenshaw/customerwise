@@ -186,25 +186,43 @@ def save_notes(request, pk):
 
 
 @shopper_required
-@require_POST
 def submit(request, pk):
+    """Submit dialog: lists anything missing, otherwise takes an optional comment and replies."""
+    from apps.core.ui import dialog, done
+
+    from .review import returned_comments
+
     report = _report(request, pk)
-    problems = services.submission_problems(report, request.user) if services.can_edit(report) else None
-    if problems:
-        return render(
-            request, "reports/report.html", _context(request, report, problems=problems), status=400
-        )
-    try:
-        services.submit(report, request.user)
-    except ValidationError as exc:
-        messages.error(request, " ".join(exc.messages))
+    if not services.can_edit(report):
+        messages.error(request, "This report has already been submitted.")
         return redirect(_report_url(report))
-    messages.success(
+    problems = services.submission_problems(report, request.user)
+    comments = list(returned_comments(report))
+    resubmitting = report.status == report.Status.RETURNED
+    if request.method == "POST" and not problems:
+        replies = {str(c.pk): request.POST.get(f"reply-{c.pk}", "") for c in comments}
+        try:
+            services.submit(report, request.user, comment=request.POST.get("comment", ""), replies=replies)
+        except ValidationError as exc:
+            messages.error(request, " ".join(exc.messages))
+            return redirect(_report_url(report))
+        return done(
+            request,
+            reverse("shopper:assignment", args=[report.assignment_id]),
+            f"Report {'re' if resubmitting else ''}submitted to Customer Wise. It's now in review; "
+            "you can't change it unless Customer Wise returns it.",
+        )
+    return dialog(
         request,
-        f"Report submitted to Customer Wise. {report.assignment.target} is now complete. "
-        "You can't change it unless Customer Wise returns it.",
+        "reports/dialogs/submit.html",
+        {
+            "report": report,
+            "problems": problems,
+            "comments": comments,
+            "resubmitting": resubmitting,
+            "comment": request.POST.get("comment", ""),
+        },
     )
-    return redirect("shopper:assignment", pk=report.assignment_id)
 
 
 # --- Evidence -------------------------------------------------------------------------------

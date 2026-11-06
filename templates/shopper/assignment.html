@@ -21,14 +21,16 @@
 {% endif %}
 {% if assignment.closed_reason == "unable" %}
   <div class="banner banner--info"><strong>Closed as unable to complete:</strong> {{ assignment.get_unable_reason_display }}.{% if assignment.unable_note %} {{ assignment.unable_note }}{% endif %} Ask Customer Wise if it needs reopening.</div>
+{% elif in_review %}
+  <div class="banner banner--info"><strong>Report submitted and in review.</strong> You can't change this assignment unless Customer Wise returns the report.</div>
 {% elif complete %}
-  <div class="banner banner--success"><strong>Report submitted.</strong> You can no longer change this assignment unless Customer Wise returns the report.</div>
+  <div class="banner banner--success"><strong>Report accepted by Customer Wise.</strong> This assignment is complete.</div>
 {% endif %}
 
 <section class="card" aria-labelledby="stage-h">
   <div class="card__head">
     <h2 id="stage-h">Stage</h2>
-    <span class="muted small">You can move back to an earlier stage. Complete is set when you submit the report.</span>
+    <span class="muted small">You can move back to an earlier stage. In review is set when you submit the report, and Complete when Customer Wise accepts it.</span>
   </div>
   <form class="stepper" method="post" action="{% url 'shopper:assignment_stage' assignment.pk %}">
     {% csrf_token %}
@@ -38,7 +40,8 @@
         <span class="stepper__num">Step {{ step.number }}</span>{{ step.label }}
       </button>
     {% endfor %}
-    <span class="stepper__step stepper__step--final{% if complete %} is-current{% endif %}"><span class="stepper__num">Set on submit</span>Complete</span>
+    <span class="stepper__step stepper__step--final{% if in_review %} is-current{% elif complete %} is-done{% endif %}"{% if in_review %} aria-current="step"{% endif %}><span class="stepper__num">Set on submit</span>In review</span>
+    <span class="stepper__step stepper__step--final{% if complete %} is-current{% endif %}"{% if complete %} aria-current="step"{% endif %}><span class="stepper__num">Set when accepted</span>Complete</span>
   </form>
 </section>
 

@@ -46,7 +46,7 @@ def project_list(request):
         open_count=Count(
             "targets__assignments",
             filter=Q(targets__assignments__closed_at__isnull=True)
-            & ~Q(targets__assignments__stage=Assignment.Stage.COMPLETE),
+            & ~Q(targets__assignments__stage__in=[Assignment.Stage.IN_REVIEW, Assignment.Stage.COMPLETE]),
             distinct=True,
         ),
     )

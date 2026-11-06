@@ -309,3 +309,13 @@ trix-toolbar .trix-dialogs { display: none; }
 .returned-panel h2 { margin: 0 0 4px; }
 .returned-panel ol { margin: 8px 0 0; padding-left: 20px; display: flex; flex-direction: column; gap: 10px; }
 .comment-dot { color: var(--status-warn-fg); font-size: 11px; }
+.problem-list { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+.reply-list { border: 0; margin: 0; padding: 0; }
+.reply { display: flex; flex-direction: column; gap: 6px; }
+.reply .review-comment { margin-top: 0; }
+.dialog { max-height: 90vh; overflow-y: auto; }
+.shopper-reply { margin-top: 6px; padding: 8px 12px; background: var(--status-active-bg); color: #173f7a; border-radius: var(--radius); font-size: 14px; }
+.previous-comment { margin-top: 10px; padding: 10px 12px; background: var(--bg); border-left: 0; border-radius: var(--radius); font-size: 14px; }
+.shopper-message { padding: 16px 20px; border-radius: var(--radius-lg); background: var(--status-active-bg); color: #173f7a; }
+.shopper-message h2 { margin: 0 0 6px; font-size: 16px; }
+.shopper-message p { margin: 0; }

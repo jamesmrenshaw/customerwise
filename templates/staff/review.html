@@ -21,6 +21,17 @@
 </div>
 {% if report.status == "returned" %}<div class="banner banner--warn">Returned to {{ assignment.shopper }} for changes. You can review it again when they resubmit.</div>{% endif %}
 {% if report.status == "accepted" %}<div class="banner banner--success">Accepted {{ report.accepted_at|date:"j M Y" }} by {{ report.accepted_by }}.</div>{% endif %}
+{% if submission.shopper_comment or previous_general %}
+  <section class="shopper-message" aria-labelledby="shopper-msg-h">
+    <h2 id="shopper-msg-h">From {{ assignment.shopper }} with version {{ submission.number }}</h2>
+    {% if submission.shopper_comment %}<p>{{ submission.shopper_comment|linebreaksbr }}</p>{% endif %}
+    {% for c in previous_general %}
+      <div class="previous-comment"><span class="muted small">Your earlier overall message:</span> {{ c.text|linebreaksbr }}
+        {% if c.reply %}<div class="shopper-reply"><strong>Reply:</strong> {{ c.reply|linebreaksbr }}</div>{% endif %}</div>
+    {% endfor %}
+  </section>
+{% endif %}
+{% if previous_count %}<p class="muted small">Your {{ previous_count }} comment{{ previous_count|pluralize }} from the last return {{ previous_count|pluralize:"is,are" }} shown next to the questions, with any replies.</p>{% endif %}
 {% if can_review %}<p class="muted small">Add comments next to the questions that need changes, then return the report. Comments aren't sent to the shopper until you return it.</p>{% endif %}
 
 <div class="layout-split">
@@ -82,9 +93,10 @@
         {% for s in submissions %}
           {% with returned=s.comments.all %}
             {% if returned %}<li><strong>Returned</strong> v{{ s.number }} · {{ returned.0.sent_at|date:"j M" }}<div class="muted">{{ returned|length }} comment{{ returned|length|pluralize }}</div>
-              <details><summary>Show comments</summary><ul class="plain-list">{% for c in returned %}<li>{% if c.question_key %}<span class="muted">{{ c.question.prompt|default:c.question_key|truncatechars:60 }}:</span> {% else %}<span class="muted">Overall:</span> {% endif %}{{ c.text }}</li>{% endfor %}</ul></details></li>{% endif %}
+              <details><summary>Show comments</summary><ul class="plain-list">{% for c in returned %}<li>{% if c.question_key %}<span class="muted">{{ c.question.prompt|default:c.question_key|truncatechars:60 }}:</span> {% else %}<span class="muted">Overall:</span> {% endif %}{{ c.text }}{% if c.reply %}<div class="shopper-reply">Reply: {{ c.reply }}</div>{% endif %}</li>{% endfor %}</ul></details></li>{% endif %}
           {% endwith %}
-          <li><strong>Submitted</strong> v{{ s.number }} by {{ s.submitted_by }} · {{ s.created_at|date:"j M" }}</li>
+          <li><strong>Submitted</strong> v{{ s.number }} by {{ s.submitted_by }} · {{ s.created_at|date:"j M" }}
+            {% if s.shopper_comment %}<div class="muted">“{{ s.shopper_comment|truncatechars:120 }}”</div>{% endif %}</li>
         {% endfor %}
         <li><strong>Assigned</strong> to {{ assignment.shopper }} · {{ assignment.created_at|date:"j M" }}<div class="muted">{% if assignment.approval_confirmed_offplatform %}Client approval confirmed off-platform{% else %}Target added by the shopper{% endif %}</div></li>
       </ol>

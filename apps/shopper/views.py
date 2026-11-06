@@ -86,7 +86,9 @@ def _detail_context(request, assignment, activity_form=None):
     changes = projects.brief_changes(acknowledged.text, latest.text) if needs_ack and acknowledged else []
     editable = fieldwork.shopper_can_edit(assignment)
     stage_index = (
-        fieldwork.MANUAL_STAGES.index(assignment.stage) if assignment.stage in fieldwork.MANUAL_STAGES else 5
+        fieldwork.MANUAL_STAGES.index(assignment.stage)
+        if assignment.stage in fieldwork.MANUAL_STAGES
+        else {Assignment.Stage.IN_REVIEW: 5, Assignment.Stage.COMPLETE: 6}.get(assignment.stage, 0)
     )
     steps = [
         {
@@ -122,6 +124,7 @@ def _detail_context(request, assignment, activity_form=None):
         "project": project,
         "editable": editable,
         "steps": steps,
+        "in_review": assignment.stage == Assignment.Stage.IN_REVIEW,
         "complete": assignment.stage == Assignment.Stage.COMPLETE,
         "planned": sorted((a for a in activities if a.occurred_at > now), key=lambda a: a.occurred_at),
         "history": [a for a in activities if a.occurred_at <= now],

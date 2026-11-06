@@ -228,7 +228,7 @@ def test_full_return_and_resubmit_cycle(as_staff, client, submitted, staff, sam)
     submitted.refresh_from_db()
     assignment.refresh_from_db()
     assert submitted.status == Report.Status.SUBMITTED and submitted.version_no == 2
-    assert assignment.stage == Assignment.Stage.COMPLETE and not assignment.returned
+    assert assignment.stage == Assignment.Stage.IN_REVIEW and not assignment.returned
     assert "Comments from Customer Wise" not in text(
         client.get(reverse("reports:report", args=[assignment.pk]))
     )
@@ -245,6 +245,8 @@ def test_accept_takes_it_off_the_queue_and_locks_it(as_staff, submitted, staff, 
     assert "accepted" in text(response)
     submitted.refresh_from_db()
     assert submitted.status == Report.Status.ACCEPTED and submitted.accepted_by == staff
+    submitted.assignment.refresh_from_db()
+    assert submitted.assignment.stage == Assignment.Stage.COMPLETE
     assert "Northwind" not in text(
         as_staff.get(reverse("staff:fieldwork", args=[project.pk]) + "?show=review")
     )
@@ -266,3 +268,40 @@ def test_returned_report_can_only_be_reviewed_again_after_resubmission(as_staff,
     review.return_report(submitted, by=staff, message="Fix it")
     page = text(as_staff.get(reverse("staff:review", args=[submitted.pk])))
     assert "Returned to Sam Okafor" in page and "Accept report" not in page
+
+
+def test_in_review_is_never_stalled_or_in_progress(as_staff, project, submitted):
+    Assignment.objects.update(last_activity_at=timezone.now() - timedelta(days=30))
+    url = reverse("staff:fieldwork", args=[project.pk])
+    assert "Northwind" not in text(as_staff.get(url + "?show=stalled"))
+    assert "Northwind" not in text(as_staff.get(url + "?show=progress"))
+    assert "In review" in text(as_staff.get(url))
+
+
+def test_shopper_replies_to_comments_and_staff_see_them(as_staff, client, submitted, staff, sam):
+    review.add_comment(
+        submitted, author=staff, text="Give the banded prices.", question=q(submitted, "pricing")
+    )
+    review.return_report(submitted, by=staff, message="Nearly there.")
+    submitted.refresh_from_db()
+    pricing_comment, overall = list(review.returned_comments(submitted).order_by("created_at"))
+    client.force_login(sam)
+    dialog = text(client.get(reverse("reports:submit", args=[submitted.pk]), **HTMX))
+    assert "Reply to Customer Wise's comments" in dialog and "Give the banded prices." in dialog
+    response = client.post(
+        reverse("reports:submit", args=[submitted.pk]),
+        {
+            f"reply-{pricing_comment.pk}": "They won't give prices until a call with procurement.",
+            f"reply-{overall.pk}": "",
+            "comment": "Nothing else changed.",
+        },
+        **HTMX,
+    )
+    assert response.status_code == 204
+    pricing_comment.refresh_from_db()
+    assert pricing_comment.reply.startswith("They won't give prices")
+    as_staff.force_login(staff)
+    page = text(as_staff.get(reverse("staff:review", args=[submitted.pk])))
+    assert "From Sam Okafor with version 2" in page and "Nothing else changed." in page
+    assert "Your earlier comment" in page and "Sam Okafor replied:" in page
+    assert "They won't give prices until a call with procurement." in page

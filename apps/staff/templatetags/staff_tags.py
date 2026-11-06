@@ -5,6 +5,7 @@ register = template.Library()
 PROJECT_STATUS = {"draft": "tag--none", "active": "tag--active", "complete": "tag--done"}
 STAGE = {
     "not_started": "tag--none",
+    "in_review": "tag--review",
     "complete": "tag--done",
 }
 

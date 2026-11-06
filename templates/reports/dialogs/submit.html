@@ -1,0 +1,38 @@
+{% extends "staff/dialogs/_base.html" %}
+{% block action_url %}{% url 'reports:submit' report.pk %}{% endblock %}
+{% block hx_url %}{% url 'reports:submit' report.pk %}{% endblock %}
+{% block cancel_url %}{% url 'reports:report' report.assignment_id %}{% endblock %}
+{% block title %}{% if problems %}You can't submit yet{% elif resubmitting %}Resubmit to Customer Wise{% else %}Submit to Customer Wise{% endif %}{% endblock %}
+{% block body %}
+  {% if problems %}
+    <p>Fix these first:</p>
+    <ul class="problem-list">
+      {% for p in problems %}
+        {% if p.kind == "brief" %}<li><a href="{% url 'shopper:assignment' report.assignment_id %}#brief">{{ p.text }}</a></li>
+        {% else %}<li><a href="{% url 'reports:report' report.assignment_id %}?s={{ p.question.section_id }}#q-{{ p.question.pk }}">{{ p.text|truncatechars:90 }}</a></li>{% endif %}
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>Customer Wise will review the report. You can't change it unless they return it.</p>
+    {% if comments %}
+      <fieldset class="stack reply-list">
+        <legend class="strong">Reply to Customer Wise's comments <span class="muted small">(optional)</span></legend>
+        <p class="muted small">Explain anything you haven't changed, or what you did.</p>
+        {% for c in comments %}
+          <div class="reply">
+            <div class="review-comment"><strong>{% if c.question %}{{ c.question.prompt|truncatechars:70 }}{% else %}Overall{% endif %}:</strong> {{ c.text|linebreaksbr }}</div>
+            <label class="visually-hidden" for="reply-{{ c.pk }}">Your reply</label>
+            <textarea class="input" id="reply-{{ c.pk }}" name="reply-{{ c.pk }}" rows="2" placeholder="Your reply"></textarea>
+          </div>
+        {% endfor %}
+      </fieldset>
+    {% endif %}
+    <div class="field">
+      <label for="submit-comment">Comment for Customer Wise <span class="muted">(optional)</span></label>
+      <textarea class="input" id="submit-comment" name="comment" rows="3">{{ comment }}</textarea>
+      <p class="field__help">Anything the reviewer should know about this {% if resubmitting %}resubmission{% else %}report{% endif %}.</p>
+    </div>
+  {% endif %}
+{% endblock %}
+{% block action_label %}{% if resubmitting %}Resubmit{% else %}Submit{% endif %}{% endblock %}
+{% block submit %}{% if not problems %}{{ block.super }}{% endif %}{% endblock %}
