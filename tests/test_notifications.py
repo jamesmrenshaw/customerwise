@@ -144,3 +144,48 @@ def test_project_form_requires_a_notification_email(client, staff, report):
     assert (
         "No notification email" in client.get(reverse("staff:fieldwork", args=[project.pk])).content.decode()
     )
+
+
+def html_part(email):
+    [(html, mimetype)] = email.alternatives
+    assert mimetype == "text/html"
+    return html
+
+
+def test_emails_are_html_with_the_logo_and_a_text_version(
+    report, sam, staff, django_capture_on_commit_callbacks
+):
+    from apps.accounts import services as accounts
+
+    accounts.send_invitation(sam, sent_by=staff)
+    accounts.request_login_link("sam@example.com")
+    with django_capture_on_commit_callbacks(execute=True):
+        report = services.submit(report, sam, comment="Line one\n<b>bold?</b>")
+    with django_capture_on_commit_callbacks(execute=True):
+        review.add_comment(report, author=staff, text="More detail")
+        review.return_report(report, by=staff)
+    report.refresh_from_db()
+    with django_capture_on_commit_callbacks(execute=True):
+        report = services.submit(report, sam)
+    with django_capture_on_commit_callbacks(execute=True):
+        review.accept_report(report, by=staff)
+
+    assert len(mail.outbox) == 6
+    for email in mail.outbox:
+        html = html_part(email)
+        assert '<img src="http://localhost:8000/static/img/email-logo.png"' in html
+        assert 'alt="Customer Wise"' in html
+        [link] = [w for w in email.body.split() if w.startswith("http://localhost:8000/")]
+        assert f'href="{link}"' in html
+        assert "<html" not in email.body  # the text part stays plain
+    submitted = html_part(mail.outbox[2])
+    assert "Line one<br>&lt;b&gt;bold?&lt;/b&gt;" in submitted  # typed text is escaped
+
+
+def test_the_email_logo_is_a_png_that_exists():
+    from pathlib import Path
+
+    from django.conf import settings
+
+    logo = Path(settings.BASE_DIR, "static", "img", "email-logo.png").read_bytes()
+    assert logo.startswith(b"\x89PNG")

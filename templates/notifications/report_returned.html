@@ -1,0 +1,10 @@
+{% extends "emails/base.html" %}
+{% block preheader %}Your report on {{ target }} needs changes.{% endblock %}
+{% block content %}
+<p style="margin:0 0 16px 0;">Hello{% if shopper.full_name %} {{ shopper.full_name }}{% endif %},</p>
+<p style="margin:0 0 16px 0;">Customer Wise has returned your report on <strong>{{ target }}</strong> ({{ project_name }}) for changes, with {{ comments }} comment{{ comments|pluralize }}.</p>
+{% if message %}<p style="margin:0 0 8px 0;">Their message:</p>
+<div style="margin:0 0 16px 0;padding:12px 16px;background-color:#E0F5F6;border-left:4px solid #3DC1CB;color:#10282B;">{{ message|linebreaksbr }}</div>{% endif %}
+<p style="margin:0;">When you resubmit, you can reply to each comment if you want to explain anything rather than change the report.</p>
+{% endblock %}
+{% block button %}Read the comments{% endblock %}

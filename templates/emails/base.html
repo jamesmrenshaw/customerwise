@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<title>{{ subject }}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#F2F6F7;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">{% block preheader %}{% endblock %}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F2F6F7;">
+  <tr>
+    <td align="center" style="padding:24px 12px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;background-color:#FFFFFF;border-top:4px solid #3DC1CB;border-radius:6px;">
+        <tr>
+          <td style="padding:28px 32px 8px 32px;">
+            <img src="{{ logo_url }}" width="200" height="38" alt="Customer Wise" style="display:block;border:0;outline:none;text-decoration:none;width:200px;height:38px;color:#029BA9;font-family:'Nunito Sans',Arial,Helvetica,sans-serif;font-size:20px;font-weight:bold;">
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:16px 32px 8px 32px;font-family:'Nunito Sans',Arial,Helvetica,sans-serif;font-size:16px;line-height:24px;color:#10282B;">
+            {% block content %}{% endblock %}
+          </td>
+        </tr>
+        {% if link %}
+        <tr>
+          <td style="padding:8px 32px 8px 32px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="background-color:#029BA9;border-radius:4px;">
+                  <a href="{{ link }}" style="display:inline-block;padding:12px 24px;font-family:'Nunito Sans',Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;line-height:20px;color:#FFFFFF;text-decoration:none;border-radius:4px;">{% block button %}Open Customer Wise{% endblock %}</a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:12px 32px 8px 32px;font-family:'Nunito Sans',Arial,Helvetica,sans-serif;font-size:13px;line-height:20px;color:#4A5F62;">
+            If the button doesn't work, copy this link into your browser:<br>
+            <a href="{{ link }}" style="color:#007480;word-break:break-all;">{{ link }}</a>
+          </td>
+        </tr>
+        {% endif %}
+        <tr>
+          <td style="padding:16px 32px 28px 32px;font-family:'Nunito Sans',Arial,Helvetica,sans-serif;font-size:13px;line-height:20px;color:#4A5F62;">
+            {% block footer %}{% endblock %}
+          </td>
+        </tr>
+      </table>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;">
+        <tr>
+          <td style="padding:16px 32px;font-family:'Nunito Sans',Arial,Helvetica,sans-serif;font-size:12px;line-height:18px;color:#6B7D80;text-align:center;">
+            Customer Wise
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>

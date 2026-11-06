@@ -9,20 +9,18 @@ action; it is logged instead. Shopper emails only use the shopper-facing project
 
 import logging
 
-from django.core.mail import send_mail
 from django.db import transaction
-from django.template.loader import render_to_string
 from django.urls import reverse
 
 from apps.accounts.services import absolute_url
+from apps.core.emails import send_email
 
 logger = logging.getLogger(__name__)
 
 
 def _send(to, subject, template, context):
-    body = render_to_string(template, context)
     try:
-        send_mail(subject, body, None, [to])
+        send_email(to, subject, template, context)
     except Exception:
         logger.exception("Report email %r to %s failed", subject, to)
 
@@ -43,7 +41,7 @@ def report_submitted(report, *, comment="", replies=0):
     _later(
         project.notification_email,
         f"Report {'resubmitted' if resubmitted else 'submitted'}: {target} ({project.internal_name})",
-        "notifications/report_submitted.txt",
+        "notifications/report_submitted",
         {
             "report": report,
             "project": project,
@@ -63,7 +61,7 @@ def report_returned(report, *, comments, message=""):
     _later(
         shopper.email,
         f"Your report on {target} has been returned for changes",
-        "notifications/report_returned.txt",
+        "notifications/report_returned",
         {
             "shopper": shopper,
             "target": target,
@@ -81,7 +79,7 @@ def report_accepted(report):
     _later(
         shopper.email,
         f"Your report on {target} has been accepted",
-        "notifications/report_accepted.txt",
+        "notifications/report_accepted",
         {
             "shopper": shopper,
             "target": target,

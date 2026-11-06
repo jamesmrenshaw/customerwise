@@ -1,0 +1,9 @@
+{% extends "emails/base.html" %}
+{% block preheader %}{{ shopper }} has {% if resubmitted %}resubmitted{% else %}submitted{% endif %} their report on {{ target }}.{% endblock %}
+{% block content %}
+<p style="margin:0 0 16px 0;"><strong>{{ shopper }}</strong> has {% if resubmitted %}resubmitted{% else %}submitted{% endif %} their report on <strong>{{ target }}</strong> for {{ project.internal_name }} (version {{ report.version_no }}).</p>
+{% if comment %}<p style="margin:0 0 8px 0;">Their comment:</p>
+<div style="margin:0 0 16px 0;padding:12px 16px;background-color:#E0F5F6;border-left:4px solid #3DC1CB;color:#10282B;">{{ comment|linebreaksbr }}</div>{% endif %}
+{% if replies %}<p style="margin:0 0 16px 0;">They replied to {{ replies }} of your review comment{{ replies|pluralize }}.</p>{% endif %}
+{% endblock %}
+{% block button %}Review the report{% endblock %}

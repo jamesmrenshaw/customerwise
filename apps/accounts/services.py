@@ -16,11 +16,11 @@ import secrets
 from datetime import timedelta
 
 from django.conf import settings
-from django.core.mail import send_mail
 from django.db import transaction
-from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
+
+from apps.core.emails import send_email
 
 from .models import Invitation, LoginToken, User
 
@@ -50,9 +50,8 @@ def absolute_url(path):
 
 
 def _send(user, subject, template, context):
-    body = render_to_string(template, {"user": user, **context})
     try:
-        send_mail(subject, body, None, [user.email])
+        send_email(user.email, subject, template, {"user": user, **context})
     except Exception as exc:
         logger.exception("Email to user %s failed", user.pk)
         raise EmailNotSent(str(exc)) from exc
@@ -85,7 +84,7 @@ def send_invitation(user, sent_by=None):
     _send(
         user,
         "You're invited to Customer Wise",
-        "accounts/email/invitation.txt",
+        "accounts/email/invitation",
         {"link": link, "expires_at": invitation.expires_at},
     )
     from apps.audit.services import record
@@ -146,7 +145,7 @@ def request_login_link(email):
     link = absolute_url(reverse("accounts:magic_link", args=[secret]))
     # A failure is already logged. The person sees the same "check your email" page either way.
     with contextlib.suppress(EmailNotSent):
-        _send(user, "Your Customer Wise sign-in link", "accounts/email/magic_link.txt", {"link": link})
+        _send(user, "Your Customer Wise sign-in link", "accounts/email/magic_link", {"link": link})
 
 
 def find_login_token(secret):

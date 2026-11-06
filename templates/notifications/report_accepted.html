@@ -1,0 +1,8 @@
+{% extends "emails/base.html" %}
+{% block preheader %}Your report on {{ target }} has been accepted.{% endblock %}
+{% block content %}
+<p style="margin:0 0 16px 0;">Hello{% if shopper.full_name %} {{ shopper.full_name }}{% endif %},</p>
+<p style="margin:0 0 16px 0;">Customer Wise has accepted your report on <strong>{{ target }}</strong> ({{ project_name }}). This assignment is now complete.</p>
+<p style="margin:0;">Thank you.</p>
+{% endblock %}
+{% block button %}View the assignment{% endblock %}

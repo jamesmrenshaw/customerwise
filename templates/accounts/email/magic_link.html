@@ -1,0 +1,8 @@
+{% extends "emails/base.html" %}
+{% block preheader %}Your sign-in link for Customer Wise.{% endblock %}
+{% block content %}
+<p style="margin:0 0 16px 0;">Hello{% if user.full_name %} {{ user.full_name }}{% endif %},</p>
+<p style="margin:0;">Use the button below to sign in to Customer Wise. It works once and expires in <strong>15 minutes</strong>.</p>
+{% endblock %}
+{% block button %}Sign in{% endblock %}
+{% block footer %}If you didn't ask to sign in, you can ignore this email.{% endblock %}

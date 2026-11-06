@@ -1,0 +1,9 @@
+{% extends "emails/base.html" %}
+{% block preheader %}You've been invited to Customer Wise.{% endblock %}
+{% block content %}
+<p style="margin:0 0 16px 0;">Hello{% if user.full_name %} {{ user.full_name }}{% endif %},</p>
+<p style="margin:0 0 16px 0;">You've been invited to Customer Wise. Use the button below to accept and sign in.</p>
+<p style="margin:0;">The invitation expires on <strong>{{ expires_at|date:"j F Y" }}</strong>. After that, ask your Customer Wise contact for a new one.</p>
+{% endblock %}
+{% block button %}Accept invitation{% endblock %}
+{% block footer %}If you weren't expecting this, you can ignore this email.{% endblock %}
