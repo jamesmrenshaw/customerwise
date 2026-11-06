@@ -21,6 +21,7 @@ class Report(BaseModel):
     status = models.CharField(max_length=20, choices=Status, default=Status.DRAFT)
     version_no = models.PositiveIntegerField(default=0, help_text="How many times it has been submitted.")
     notes = models.TextField(blank=True, help_text="Notes for Customer Wise. Never included in exports.")
+    notes_updated_at = models.DateTimeField(null=True, blank=True)
     removed_answers = models.JSONField(
         default=list,
         blank=True,

@@ -70,8 +70,11 @@ def save_answer(report, question, value):
 
 def save_notes(report, notes):
     _require_editable(report)
-    report.notes = notes.strip()
-    report.save(update_fields=["notes", "updated_at"])
+    notes = notes.strip()
+    if notes != report.notes:
+        report.notes = notes
+        report.notes_updated_at = timezone.now()
+    report.save(update_fields=["notes", "notes_updated_at", "updated_at"])
 
 
 def missing_questions(report):

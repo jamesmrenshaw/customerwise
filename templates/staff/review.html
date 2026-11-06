@@ -1,4 +1,4 @@
-{% extends "base.html" %}{% load staff_tags %}
+{% extends "base.html" %}{% load staff_tags %}{% load ui %}
 {% block title %}Review: {{ assignment.target.name }} · Customer Wise{% endblock %}
 {% block content %}
 <nav class="breadcrumb" aria-label="Breadcrumb"><a href="{% url 'staff:projects' %}">Projects</a> / <a href="{% url 'staff:fieldwork' project.pk %}">{{ project.internal_name }}</a> / <span>{{ assignment.target.name }}</span></nav>
@@ -23,11 +23,11 @@
 {% if report.status == "accepted" %}<div class="banner banner--success">Accepted {{ report.accepted_at|date:"j M Y" }} by {{ report.accepted_by }}.</div>{% endif %}
 {% if submission.shopper_comment or previous_general %}
   <section class="shopper-message" aria-labelledby="shopper-msg-h">
-    <h2 id="shopper-msg-h">From {{ assignment.shopper }} with version {{ submission.number }}</h2>
+    <h2 id="shopper-msg-h">From {{ assignment.shopper }} with version {{ submission.number }} <span class="small">· {{ submission.created_at|stamp }}</span></h2>
     {% if submission.shopper_comment %}<p>{{ submission.shopper_comment|linebreaksbr }}</p>{% endif %}
     {% for c in previous_general %}
-      <div class="previous-comment"><span class="muted small">Your earlier overall message:</span> {{ c.text|linebreaksbr }}
-        {% if c.reply %}<div class="shopper-reply"><strong>Reply:</strong> {{ c.reply|linebreaksbr }}</div>{% endif %}</div>
+      <div class="previous-comment"><span class="muted small">Your earlier overall message, sent {{ c.sent_at|stamp }}:</span> {{ c.text|linebreaksbr }}
+        {% if c.reply %}<div class="shopper-reply"><strong>Reply</strong> <span class="small">{{ c.replied_at|stamp }}</span>: {{ c.reply|linebreaksbr }}</div>{% endif %}</div>
     {% endfor %}
   </section>
 {% endif %}
@@ -83,19 +83,19 @@
     </section>
     <section class="card" aria-labelledby="notes-h">
       <h2 id="notes-h">Shopper's notes</h2>
-      {% if notes %}<p class="small">{{ notes|linebreaksbr }}</p>{% else %}<p class="muted small">None.</p>{% endif %}
+      {% if notes %}<p class="muted small">As at version {{ submission.number }}, submitted {{ submission.created_at|stamp }}{% if notes_updated_at %} · last edited {{ notes_updated_at|stamp }}{% endif %}</p><p class="small">{{ notes|linebreaksbr }}</p>{% else %}<p class="muted small">None.</p>{% endif %}
       <p class="muted small">Never included in exports.</p>
     </section>
     <section class="card" aria-labelledby="hist-h">
       <h2 id="hist-h">History</h2>
       <ol class="plain-list divided small">
-        {% if report.accepted_at %}<li><strong>Accepted</strong> by {{ report.accepted_by }} · {{ report.accepted_at|date:"j M" }}</li>{% endif %}
+        {% if report.accepted_at %}<li><strong>Accepted</strong> by {{ report.accepted_by }} · {{ report.accepted_at|stamp }}</li>{% endif %}
         {% for s in submissions %}
           {% with returned=s.comments.all %}
-            {% if returned %}<li><strong>Returned</strong> v{{ s.number }} · {{ returned.0.sent_at|date:"j M" }}<div class="muted">{{ returned|length }} comment{{ returned|length|pluralize }}</div>
-              <details><summary>Show comments</summary><ul class="plain-list">{% for c in returned %}<li>{% if c.question_key %}<span class="muted">{{ c.question.prompt|default:c.question_key|truncatechars:60 }}:</span> {% else %}<span class="muted">Overall:</span> {% endif %}{{ c.text }}{% if c.reply %}<div class="shopper-reply">Reply: {{ c.reply }}</div>{% endif %}</li>{% endfor %}</ul></details></li>{% endif %}
+            {% if returned %}<li><strong>Returned</strong> v{{ s.number }} · {{ returned.0.sent_at|stamp }}<div class="muted">{{ returned|length }} comment{{ returned|length|pluralize }}</div>
+              <details><summary>Show comments</summary><ul class="plain-list">{% for c in returned %}<li>{% if c.question_key %}<span class="muted">{{ c.question.prompt|default:c.question_key|truncatechars:60 }}:</span> {% else %}<span class="muted">Overall:</span> {% endif %}{{ c.text }}{% if c.reply %}<div class="shopper-reply">Reply {{ c.replied_at|stamp }}: {{ c.reply }}</div>{% endif %}</li>{% endfor %}</ul></details></li>{% endif %}
           {% endwith %}
-          <li><strong>Submitted</strong> v{{ s.number }} by {{ s.submitted_by }} · {{ s.created_at|date:"j M" }}
+          <li><strong>Submitted</strong> v{{ s.number }} by {{ s.submitted_by }} · {{ s.created_at|stamp }}
             {% if s.shopper_comment %}<div class="muted">“{{ s.shopper_comment|truncatechars:120 }}”</div>{% endif %}</li>
         {% endfor %}
         <li><strong>Assigned</strong> to {{ assignment.shopper }} · {{ assignment.created_at|date:"j M" }}<div class="muted">{% if assignment.approval_confirmed_offplatform %}Client approval confirmed off-platform{% else %}Target added by the shopper{% endif %}</div></li>

@@ -1,4 +1,4 @@
-{% extends "staff/dialogs/_base.html" %}
+{% extends "staff/dialogs/_base.html" %}{% load ui %}
 {% block action_url %}{% url 'reports:submit' report.pk %}{% endblock %}
 {% block hx_url %}{% url 'reports:submit' report.pk %}{% endblock %}
 {% block cancel_url %}{% url 'reports:report' report.assignment_id %}{% endblock %}
@@ -20,7 +20,7 @@
         <p class="muted small">Explain anything you haven't changed, or what you did.</p>
         {% for c in comments %}
           <div class="reply">
-            <div class="review-comment"><strong>{% if c.question %}{{ c.question.prompt|truncatechars:70 }}{% else %}Overall{% endif %}:</strong> {{ c.text|linebreaksbr }}</div>
+            <div class="review-comment"><strong>{% if c.question %}{{ c.question.prompt|truncatechars:70 }}{% else %}Overall{% endif %}</strong> <span class="small">· {{ c.sent_at|stamp }}</span>: {{ c.text|linebreaksbr }}</div>
             <label class="visually-hidden" for="reply-{{ c.pk }}">Your reply</label>
             <textarea class="input" id="reply-{{ c.pk }}" name="reply-{{ c.pk }}" rows="2" placeholder="Your reply"></textarea>
           </div>

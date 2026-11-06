@@ -1,13 +1,14 @@
+{% load ui %}
 {% for c in item.previous %}
   <div class="previous-comment">
-    <div><span class="muted small">Your earlier comment ({{ c.sent_at|date:"j M" }}):</span> {{ c.text|linebreaksbr }}</div>
-    {% if c.reply %}<div class="shopper-reply"><strong>{{ assignment.shopper }} replied:</strong> {{ c.reply|linebreaksbr }}</div>
+    <div><span class="muted small">Your earlier comment, sent {{ c.sent_at|stamp }}:</span> {{ c.text|linebreaksbr }}</div>
+    {% if c.reply %}<div class="shopper-reply"><strong>{{ assignment.shopper }} replied</strong> <span class="small">{{ c.replied_at|stamp }}</span>: {{ c.reply|linebreaksbr }}</div>
     {% else %}<div class="muted small">No reply; check whether the answer changed.</div>{% endif %}
   </div>
 {% endfor %}
 {% for c in item.comments %}
   <div class="review-comment">
-    <div class="review-comment__head"><strong>Your comment</strong> <span class="muted small">· not sent yet</span></div>
+    <div class="review-comment__head"><strong>Your comment</strong> <span class="small">· {{ c.created_at|stamp }}{% if c.updated_at|date:"U" != c.created_at|date:"U" %} · edited {{ c.updated_at|stamp }}{% endif %} · not sent yet</span></div>
     <form method="post" action="{% url 'staff:comment_update' c.pk %}" class="stack">
       {% csrf_token %}
       <label class="visually-hidden" for="c-{{ c.pk }}">Edit comment</label>

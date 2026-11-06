@@ -319,3 +319,4 @@ trix-toolbar .trix-dialogs { display: none; }
 .shopper-message { padding: 16px 20px; border-radius: var(--radius-lg); background: var(--status-active-bg); color: #173f7a; }
 .shopper-message h2 { margin: 0 0 6px; font-size: 16px; }
 .shopper-message p { margin: 0; }
+.shopper-message h2 .small, .review-comment__head .small { font-weight: 400; }

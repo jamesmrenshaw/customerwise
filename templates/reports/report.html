@@ -1,4 +1,4 @@
-{% extends "base.html" %}{% load report_tags %}
+{% extends "base.html" %}{% load report_tags %}{% load ui %}
 {% block title %}Report: {{ target.name }} · Customer Wise{% endblock %}
 {% block page_class %}page--with-bar{% endblock %}
 {% block extra_head %}{% load static %}
@@ -30,10 +30,11 @@
 {% if comment_list %}
   <section class="returned-panel" aria-labelledby="ret-h">
     <h2 id="ret-h">Comments from Customer Wise</h2>
-    <p class="small">{{ comment_list.0.comment.author|default:"Customer Wise" }} returned this report on {{ comment_list.0.comment.sent_at|date:"j M" }}. Fix each point, then resubmit.</p>
+    <p class="small">{{ comment_list.0.comment.author|default:"Customer Wise" }} returned this report on {{ comment_list.0.comment.sent_at|stamp }}. Fix each point, then resubmit.</p>
     <ol>
       {% for c in comment_list %}
         <li>{% if c.section %}<a class="strong" href="?s={{ c.section.pk }}#q-{{ c.comment.question_id }}">{{ c.section.title }}: {{ c.prompt|truncatechars:70 }}</a>{% else %}<strong>Overall</strong>{% endif %}
+          <div class="small">{{ c.comment.sent_at|stamp }}</div>
           <div>{{ c.comment.text|linebreaksbr }}</div></li>
       {% endfor %}
     </ol>
@@ -68,7 +69,7 @@
     {% elif view == "notes" %}
       <section class="card" aria-labelledby="notes-h">
         <h2 id="notes-h">Notes for Customer Wise</h2>
-        <p class="muted small">Context for the reviewer. These notes are never included in the exported report.</p>
+        <p class="muted small">Context for the reviewer. These notes are never included in the exported report.{% if report.notes_updated_at %} Last saved {{ report.notes_updated_at|stamp }}.{% endif %}</p>
         <form method="post" action="{% url 'reports:save_notes' report.pk %}" class="stack">
           {% csrf_token %}
           <label class="visually-hidden" for="notes">Notes</label>
@@ -90,7 +91,7 @@
             <div class="question{% if item.missing %} question--missing{% endif %}" id="q-{{ q.pk }}">
               <label class="question__prompt" id="l-{{ q.pk }}" for="f-{{ q.pk }}">{{ item.n }}. {{ q.prompt }}</label>
               {% if q.guidance %}<p class="question__guidance">Guidance: {{ q.guidance }}</p>{% endif %}
-              {% for c in item.comments %}<div class="review-comment"><strong>Customer Wise:</strong> {{ c.text|linebreaksbr }}</div>{% endfor %}
+              {% for c in item.comments %}<div class="review-comment"><strong>Customer Wise</strong> <span class="small">{{ c.sent_at|stamp }}</span>: {{ c.text|linebreaksbr }}</div>{% endfor %}
               {% url 'reports:autosave' report.pk q.pk as save_url %}
               {% if q.answer_type == "long_text" %}
                 {% if editable %}

@@ -303,5 +303,38 @@ def test_shopper_replies_to_comments_and_staff_see_them(as_staff, client, submit
     as_staff.force_login(staff)
     page = text(as_staff.get(reverse("staff:review", args=[submitted.pk])))
     assert "From Sam Okafor with version 2" in page and "Nothing else changed." in page
-    assert "Your earlier comment" in page and "Sam Okafor replied:" in page
+    assert "Your earlier comment" in page and "Sam Okafor replied" in page
     assert "They won't give prices until a call with procurement." in page
+
+
+def test_stamp_shows_date_and_uk_time():
+    from datetime import UTC, datetime
+
+    from apps.core.templatetags.ui import stamp
+
+    # 6 Nov is GMT; 6 Jul is BST (UTC+1)
+    assert (
+        stamp(datetime(2026, 11, 6, 16, 5, tzinfo=UTC))
+        == '<time datetime="2026-11-06T16:05+00:00">6 Nov 2026, 16:05</time>'
+    )
+    assert ">6 Jul 2026, 17:05<" in stamp(datetime(2026, 7, 6, 16, 5, tzinfo=UTC))
+    assert stamp(None) == ""
+
+
+def test_comments_replies_and_notes_show_when(as_staff, client, submitted, staff, sam):
+    from apps.core.templatetags.ui import stamp
+
+    with pytest.raises(ValidationError):  # submitted reports can't be changed
+        services.save_notes(submitted, "Asked which bank")
+    comment = review.add_comment(
+        submitted, author=staff, text="More detail", question=q(submitted, "pricing")
+    )
+    page = as_staff.get(reverse("staff:review", args=[submitted.pk])).content.decode()
+    assert stamp(comment.created_at) in page
+    review.return_report(submitted, by=staff, message="Nearly")
+    comment.refresh_from_db()
+    client.force_login(sam)
+    report_page = client.get(
+        reverse("reports:report", args=[submitted.assignment_id]) + f"?s={q(submitted, 'pricing').section_id}"
+    ).content.decode()
+    assert stamp(comment.sent_at) in report_page

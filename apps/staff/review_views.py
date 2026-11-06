@@ -204,6 +204,9 @@ def review_report(request, pk):
             "can_review": report.status == Report.Status.SUBMITTED,
             "evidence": report.assignment.evidence.filter(pk__in=evidence_ids).order_by("created_at"),
             "notes": submission.snapshot.get("notes", ""),
+            "notes_updated_at": report.notes_updated_at
+            if submission.snapshot.get("notes") == report.notes
+            else None,
             "sent_comments": sent,
             "submissions": report.submissions.select_related("submitted_by").order_by("-number"),
             "comment_form": CommentForm(),

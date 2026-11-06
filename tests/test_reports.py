@@ -475,3 +475,17 @@ def test_submitted_report_is_locked_while_in_review(as_sam, report):
     )
     report.assignment.refresh_from_db()
     assert report.assignment.stage == Assignment.Stage.IN_REVIEW
+
+
+def test_notes_record_when_they_were_saved(as_sam, report):
+    from apps.core.templatetags.ui import stamp
+
+    as_sam.post(reverse("reports:save_notes", args=[report.pk]), {"notes": "First"})
+    report.refresh_from_db()
+    first = report.notes_updated_at
+    assert first is not None
+    as_sam.post(reverse("reports:save_notes", args=[report.pk]), {"notes": "First"})  # unchanged
+    report.refresh_from_db()
+    assert report.notes_updated_at == first
+    page = as_sam.get(reverse("reports:report", args=[report.assignment_id]) + "?view=notes").content.decode()
+    assert "Last saved " + stamp(first) in page
