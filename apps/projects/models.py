@@ -42,6 +42,10 @@ class Project(BaseModel):
         max_length=200, help_text="The only name shoppers see. Must not identify the client."
     )
     status = models.CharField(max_length=20, choices=Status, default=Status.DRAFT)
+    notification_email = models.EmailField(
+        blank=True,
+        help_text="The Customer Wise staff member who is emailed when a report is submitted.",
+    )
     ended_at = models.DateTimeField(
         null=True, blank=True, help_text="Set when the project ends; drives the 12-month retention rule."
     )

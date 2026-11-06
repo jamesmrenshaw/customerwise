@@ -1,0 +1,11 @@
+{% autoescape off %}{{ shopper }} has {% if resubmitted %}resubmitted{% else %}submitted{% endif %} their report on {{ target }} for {{ project.internal_name }} (version {{ report.version_no }}).
+{% if comment %}
+Their comment:
+{{ comment }}
+{% endif %}{% if replies %}
+They replied to {{ replies }} of your review comment{{ replies|pluralize }}.
+{% endif %}
+Review it here:
+{{ link }}
+
+Customer Wise{% endautoescape %}

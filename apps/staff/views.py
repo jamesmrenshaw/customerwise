@@ -73,7 +73,14 @@ def project_list(request):
     )
 
 
-AUDITED_PROJECT_FIELDS = ["client", "status", "internal_name", "client_facing_name", "shopper_facing_name"]
+AUDITED_PROJECT_FIELDS = [
+    "client",
+    "status",
+    "notification_email",
+    "internal_name",
+    "client_facing_name",
+    "shopper_facing_name",
+]
 
 
 def _save_project(request, form, was_complete=False):

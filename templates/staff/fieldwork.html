@@ -3,6 +3,7 @@
 {% block content %}
 {% include "staff/_project_header.html" %}
 <p class="muted small">Shoppers see: <strong>{{ project.shopper_facing_name }}</strong> · Client name hidden from shoppers</p>
+{% if not project.notification_email %}<div class="banner banner--warn" role="status"><strong>No notification email.</strong> Nobody is emailed when reports are submitted. <a href="{% url 'staff:project_details' project.pk %}">Add one in Details and brief</a>.</div>{% endif %}
 
 <div class="tiles">
   {% for label, value, cls in tiles %}

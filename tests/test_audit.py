@@ -132,6 +132,7 @@ def test_setup_actions_through_the_screens_are_recorded(client, staff, project, 
     data = {
         "client": project.client.pk,
         "status": "complete",
+        "notification_email": "reviews@customerwise.example",
         "internal_name": project.internal_name,
         "client_facing_name": "Messaging vendor review",
         "shopper_facing_name": project.shopper_facing_name,

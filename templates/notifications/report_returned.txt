@@ -1,0 +1,13 @@
+{% autoescape off %}Hello{% if shopper.full_name %} {{ shopper.full_name }}{% endif %},
+
+Customer Wise has returned your report on {{ target }} ({{ project_name }}) for changes, with {{ comments }} comment{{ comments|pluralize }}.
+{% if message %}
+Their message:
+{{ message }}
+{% endif %}
+Read the comments and update your report here:
+{{ link }}
+
+When you resubmit, you can reply to each comment if you want to explain anything rather than change the report.
+
+Customer Wise{% endautoescape %}

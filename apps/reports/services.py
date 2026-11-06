@@ -169,6 +169,13 @@ def submit(report, user, *, comment="", replies=None):
         with_comment=bool((comment or "").strip()),
         replies=sum(1 for v in (replies or {}).values() if (v or "").strip()),
     )
+    from .notifications import report_submitted
+
+    report_submitted(
+        report,
+        comment=(comment or "").strip(),
+        replies=sum(1 for v in (replies or {}).values() if (v or "").strip()),
+    )
     return report
 
 

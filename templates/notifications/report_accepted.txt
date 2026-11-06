@@ -1,0 +1,10 @@
+{% autoescape off %}Hello{% if shopper.full_name %} {{ shopper.full_name }}{% endif %},
+
+Customer Wise has accepted your report on {{ target }} ({{ project_name }}). This assignment is now complete.
+
+View it here:
+{{ link }}
+
+Thank you.
+
+Customer Wise{% endautoescape %}

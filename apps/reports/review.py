@@ -101,6 +101,9 @@ def return_report(report, *, by, message=""):
         stage=Assignment.Stage.REPORT_DRAFTING, returned=True, last_activity_at=now
     )
     _record(by, "report.returned", report, comments=len(drafts))
+    from .notifications import report_returned
+
+    report_returned(report, comments=len(drafts), message=message)
     return report
 
 
@@ -122,4 +125,7 @@ def accept_report(report, *, by):
         stage=Assignment.Stage.COMPLETE, last_activity_at=report.accepted_at
     )
     _record(by, "report.accepted", report)
+    from .notifications import report_accepted
+
+    report_accepted(report)
     return report

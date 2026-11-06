@@ -16,6 +16,7 @@ def _changes(data):
         "internal_name": "internal name",
         "client_facing_name": "client-facing name",
         "shopper_facing_name": "shopper-facing name",
+        "notification_email": "notification email",
         "name": "name",
         "reference": "reference",
         "role": "role",

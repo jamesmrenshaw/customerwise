@@ -61,6 +61,7 @@ def project_data(project, **changes):
     data = {
         "client": project.client.pk,
         "status": project.status,
+        "notification_email": "reviews@customerwise.example",
         "internal_name": project.internal_name,
         "client_facing_name": project.client_facing_name,
         "shopper_facing_name": project.shopper_facing_name,
@@ -146,6 +147,7 @@ def test_create_project_with_brief(as_staff, client_org):
         {
             "client": client_org.pk,
             "status": "draft",
+            "notification_email": "reviews@customerwise.example",
             "internal_name": "New internal",
             "client_facing_name": "New client name",
             "shopper_facing_name": "New shopper name",

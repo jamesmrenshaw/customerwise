@@ -58,7 +58,15 @@ class ProjectForm(StyledModelForm):
 
     class Meta:
         model = Project
-        fields = ["client", "status", "internal_name", "client_facing_name", "shopper_facing_name"]
+        fields = [
+            "client",
+            "status",
+            "notification_email",
+            "internal_name",
+            "client_facing_name",
+            "shopper_facing_name",
+        ]
+        labels = {"notification_email": "Notification email"}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -69,6 +77,8 @@ class ProjectForm(StyledModelForm):
         self.fields["client"].queryset = ClientOrganisation.objects.filter(clients)
         if self.instance.pk and self.instance.latest_brief:
             self.fields["brief"].initial = self.instance.latest_brief.text
+        # Required from now on, so every project tells someone when a report is submitted.
+        self.fields["notification_email"].required = True
 
     def clean(self):
         data = super().clean()

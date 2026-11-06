@@ -3,7 +3,8 @@
 {% block content %}
 {% include "staff/_project_header.html" %}
 
-{% if form.errors %}<div class="banner banner--error" role="alert"><strong>Not saved.</strong> Fix the problems marked below.</div>{% endif %}
+{% if form.errors %}<div class="banner banner--error" role="alert"><strong>Not saved.</strong> Fix the problems marked below.</div>
+{% elif project and not project.notification_email %}<div class="banner banner--warn" role="status"><strong>No notification email.</strong> Nobody is emailed when reports on this project are submitted. Add one below.</div>{% endif %}
 
 <form method="post" class="layout-split">
   {% csrf_token %}
@@ -17,6 +18,7 @@
         </div>
         {% include "staff/_field.html" with field=form.status help="Shoppers can only work on active projects." %}
       </div>
+      <div class="mt-16">{% include "staff/_field.html" with field=form.notification_email help="Customer Wise staff member emailed when a report is submitted, with a link to review it. Shoppers are emailed when their report is returned or accepted." %}</div>
       <h3>Names</h3>
       <p class="muted small">Each audience sees only its own name. Shoppers must never be able to work out who the client is.</p>
       <div class="stack">
