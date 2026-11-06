@@ -18,4 +18,6 @@ def healthz(request):
 def home(request):
     if request.user.is_authenticated and request.user.is_staff:
         return redirect("staff:projects")
+    if request.user.is_authenticated and request.user.is_shopper:
+        return redirect("shopper:assignments")
     return render(request, "core/home.html")

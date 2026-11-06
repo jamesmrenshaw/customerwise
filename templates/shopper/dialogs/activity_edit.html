@@ -1,0 +1,13 @@
+{% extends "staff/dialogs/_base.html" %}
+{% block action_url %}{% url 'shopper:activity_edit' activity.pk %}{% endblock %}
+{% block hx_url %}{% url 'shopper:activity_edit' activity.pk %}{% endblock %}
+{% block cancel_url %}{% url 'shopper:assignment' activity.assignment_id %}{% endblock %}
+{% block title %}Edit activity{% endblock %}
+{% block action_label %}Save{% endblock %}
+{% block body %}
+  {% include "staff/_field.html" with field=form.type %}
+  {% include "staff/_field.html" with field=form.occurred_at %}
+  {% include "staff/_field.html" with field=form.contact_job_title %}
+  {% include "staff/_field.html" with field=form.notes %}
+  <p class="muted small">Customer Wise can see earlier versions of this entry.</p>
+{% endblock %}

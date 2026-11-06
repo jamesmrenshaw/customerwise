@@ -1,0 +1,107 @@
+{% extends "base.html" %}{% load staff_tags %}
+{% block title %}{{ target.name }} · Customer Wise{% endblock %}
+{% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb"><a href="{% url 'shopper:assignments' %}">My assignments</a> / <span>{{ target.name }}</span></nav>
+<div class="page-head">
+  <div>
+    <h1>{{ target.name }}</h1>
+    <p class="lead">{% if target.website %}{{ target.website }} · {% endif %}{{ project.shopper_facing_name }}</p>
+  </div>
+  {% if editable %}
+    {% url 'shopper:assignment_unable' assignment.pk as unable_url %}
+    <a class="btn" href="{{ unable_url }}" hx-get="{{ unable_url }}" hx-target="#modal">Unable to complete…</a>
+  {% endif %}
+</div>
+
+{% if assignment.closed_reason == "unable" %}
+  <div class="banner banner--info"><strong>Closed as unable to complete:</strong> {{ assignment.get_unable_reason_display }}.{% if assignment.unable_note %} {{ assignment.unable_note }}{% endif %} Ask Customer Wise if it needs reopening.</div>
+{% elif complete %}
+  <div class="banner banner--success"><strong>Report submitted.</strong> You can no longer change this assignment unless Customer Wise returns the report.</div>
+{% endif %}
+
+<section class="card" aria-labelledby="stage-h">
+  <div class="card__head">
+    <h2 id="stage-h">Stage</h2>
+    <span class="muted small">You can move back to an earlier stage. Complete is set when you submit the report.</span>
+  </div>
+  <form class="stepper" method="post" action="{% url 'shopper:assignment_stage' assignment.pk %}">
+    {% csrf_token %}
+    {% for step in steps %}
+      <button class="stepper__step{% if step.current %} is-current{% elif step.done %} is-done{% endif %}" name="stage" value="{{ step.value }}"
+        {% if step.current %}aria-current="step"{% endif %} {% if not editable %}disabled{% endif %}>
+        <span class="stepper__num">Step {{ step.number }}</span>{{ step.label }}
+      </button>
+    {% endfor %}
+    <span class="stepper__step stepper__step--final{% if complete %} is-current{% endif %}"><span class="stepper__num">Set on submit</span>Complete</span>
+  </form>
+</section>
+
+<div class="layout-split">
+  <div class="layout-split__main stack-lg" id="activity">
+    {% if editable %}
+    <section class="card" aria-labelledby="log-h">
+      <h2 id="log-h">Log activity</h2>
+      <p class="muted small">Record contact attempts, calls, meetings and notes. Use a future date to plan an activity.</p>
+      <form method="post" action="{% url 'shopper:activity_add' assignment.pk %}" class="stack">
+        {% csrf_token %}
+        {% if activity_form.non_field_errors %}<div class="banner banner--error" role="alert">{{ activity_form.non_field_errors|join:" " }}</div>{% endif %}
+        <div class="grid-3">
+          {% include "staff/_field.html" with field=activity_form.type %}
+          {% include "staff/_field.html" with field=activity_form.occurred_at %}
+          {% include "staff/_field.html" with field=activity_form.contact_job_title %}
+        </div>
+        {% include "staff/_field.html" with field=activity_form.notes %}
+        <div class="form-actions"><button class="btn btn--primary" type="submit">Add to log</button></div>
+      </form>
+    </section>
+    {% endif %}
+
+    <section class="card" aria-labelledby="act-h">
+      <h2 id="act-h">Activity</h2>
+      <h3 class="eyebrow">Planned</h3>
+      <ul class="activity-list">
+        {% for a in planned %}{% include "shopper/_activity.html" with planned=True %}{% empty %}<li class="muted">Nothing planned.</li>{% endfor %}
+      </ul>
+      <h3 class="eyebrow">History</h3>
+      <ul class="activity-list">
+        {% for a in history %}{% include "shopper/_activity.html" %}{% empty %}<li class="muted">Nothing logged yet.</li>{% endfor %}
+      </ul>
+    </section>
+  </div>
+
+  <aside class="layout-split__side stack-lg">
+    <section class="card" aria-labelledby="rep-h">
+      <h2 id="rep-h">Report</h2>
+      <p class="muted small">Report drafting opens in the next release. Keep logging your fieldwork here in the meantime.</p>
+      <button class="btn btn--block" disabled>Edit report</button>
+    </section>
+
+    <section class="card" aria-labelledby="brief-h" id="brief">
+      <h2 id="brief-h">Brief</h2>
+      {% if not brief %}
+        <p class="muted">Customer Wise hasn't added a brief yet.</p>
+      {% else %}
+        {% if needs_ack %}
+          <div class="banner banner--info small">
+            {% if first_ack %}<strong>Please read the brief</strong> and confirm. You can't submit your report until you do.
+            {% else %}<strong>The brief changed on {{ brief.created_at|date:"j M" }}.</strong> Read what changed and confirm. You can't submit your report until you do.{% endif %}
+          </div>
+          {% if changes %}
+            <div class="diff small" aria-label="What changed">
+              {% for kind, line in changes %}<div class="diff__{{ kind }}">{% if kind == "added" %}+{% else %}−{% endif %} {{ line }}</div>{% endfor %}
+            </div>
+          {% endif %}
+        {% else %}
+          <p class="text-success small strong">You've confirmed the latest brief.</p>
+        {% endif %}
+        <details {% if first_ack %}open{% endif %}><summary>Read the full brief</summary><div class="quote">{{ brief.text|linebreaksbr }}</div></details>
+        {% if needs_ack %}
+          <form method="post" action="{% url 'shopper:brief_acknowledge' assignment.pk %}">{% csrf_token %}
+            <button class="btn btn--primary btn--block" type="submit">{% if first_ack %}I have read the brief{% else %}I have read the changes{% endif %}</button>
+          </form>
+        {% endif %}
+      {% endif %}
+    </section>
+  </aside>
+</div>
+{% endblock %}

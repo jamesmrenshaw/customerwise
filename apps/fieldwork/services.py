@@ -83,3 +83,118 @@ def archive_target(target, *, note=""):
         target.archived_at = timezone.now()
         target.save(update_fields=["archived_at", "updated_at"])
     return target
+
+
+# --- Shopper actions (CW-028 to CW-032, MVP-01) ---------------------------------------
+
+# Shoppers set these themselves and can step back (D08). Complete is set only by submitting.
+MANUAL_STAGES = [
+    Assignment.Stage.NOT_STARTED,
+    Assignment.Stage.PLANNED,
+    Assignment.Stage.INITIAL_CONTACT,
+    Assignment.Stage.FOLLOW_UP,
+    Assignment.Stage.REPORT_DRAFTING,
+]
+
+
+def shopper_can_edit(assignment):
+    """Open and not yet submitted. (Returned reports reopen editing once reports exist.)"""
+    return assignment.is_open and assignment.stage != Assignment.Stage.COMPLETE
+
+
+def _require_editable(assignment):
+    if not shopper_can_edit(assignment):
+        raise ValidationError("This assignment can no longer be changed.")
+
+
+def _touch(assignment):
+    assignment.last_activity_at = timezone.now()
+    assignment.save(update_fields=["last_activity_at", "updated_at"])
+
+
+@transaction.atomic
+def set_stage(assignment, stage):
+    _require_editable(assignment)
+    if stage not in MANUAL_STAGES:
+        raise ValidationError("Complete is set automatically when you submit the report.")
+    assignment.stage = stage
+    assignment.last_activity_at = timezone.now()
+    assignment.save(update_fields=["stage", "last_activity_at", "updated_at"])
+    return assignment
+
+
+@transaction.atomic
+def mark_unable(assignment, reason, note=""):
+    """Close the assignment without a report (D08). The shopper still sees it, read-only."""
+    _require_editable(assignment)
+    if reason not in Assignment.UnableReason.values:
+        raise ValidationError("Choose a reason.")
+    assignment.unable_reason = reason
+    assignment.unable_note = note
+    _close(assignment, Assignment.ClosedReason.UNABLE, note)
+    return assignment
+
+
+@transaction.atomic
+def add_activity(assignment, *, by, type, occurred_at, notes, contact_job_title=""):
+    from .models import Activity
+
+    _require_editable(assignment)
+    activity = Activity.objects.create(
+        assignment=assignment,
+        type=type,
+        occurred_at=occurred_at,
+        notes=notes,
+        contact_job_title=contact_job_title,
+        created_by=by,
+    )
+    _touch(assignment)
+    return activity
+
+
+@transaction.atomic
+def update_activity(activity, **fields):
+    _require_editable(activity.assignment)
+    for name, value in fields.items():
+        setattr(activity, name, value)
+    activity.save()
+    _touch(activity.assignment)
+    return activity
+
+
+@transaction.atomic
+def delete_activity(activity):
+    """Soft delete: hidden from the shopper, kept in history for staff (D10)."""
+    _require_editable(activity.assignment)
+    activity.deleted_at = timezone.now()
+    activity.save()
+    _touch(activity.assignment)
+
+
+class DuplicateTarget(ValidationError):
+    """A matching target already exists on the project. own is the shopper's own match, if any."""
+
+    def __init__(self, own=None):
+        self.own = own
+        super().__init__("Possible duplicate target.")
+
+
+@transaction.atomic
+def add_target_by_shopper(project, shopper, name, website=""):
+    """A shopper adds a target to a project they're working on; it's assigned to them (MVP-01)."""
+    from apps.core.access import assignments_for
+    from apps.projects.models import Project, Target
+    from apps.projects.services import find_duplicate_targets
+
+    if project.status != Project.Status.ACTIVE:
+        raise ValidationError("You can only add targets to active projects.")
+    if not assignments_for(shopper).filter(target__project=project, closed_at__isnull=True).exists():
+        raise ValidationError("You can only add targets to projects you're working on.")
+    duplicates = list(find_duplicate_targets(project, name, website))
+    if duplicates:
+        mine = assignments_for(shopper).filter(target__in=duplicates).select_related("target").first()
+        raise DuplicateTarget(own=mine.target if mine else None)
+    target = Target.objects.create(
+        project=project, name=name, website=website, added_by=shopper, added_by_shopper=True
+    )
+    return assign(target, shopper, by=shopper, by_shopper=True)

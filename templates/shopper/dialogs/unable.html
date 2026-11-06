@@ -1,0 +1,12 @@
+{% extends "staff/dialogs/_base.html" %}
+{% block action_url %}{% url 'shopper:assignment_unable' assignment.pk %}{% endblock %}
+{% block hx_url %}{% url 'shopper:assignment_unable' assignment.pk %}{% endblock %}
+{% block cancel_url %}{% url 'shopper:assignment' assignment.pk %}{% endblock %}
+{% block title %}Mark as unable to complete{% endblock %}
+{% block action_class %}btn--danger{% endblock %}
+{% block action_label %}Close assignment{% endblock %}
+{% block body %}
+  <p>This closes <strong>{{ assignment.target.name }}</strong> without a report. You can't undo it; ask Customer Wise if you need it reopened.</p>
+  {% include "staff/_field.html" with field=form.reason %}
+  {% include "staff/_field.html" with field=form.note %}
+{% endblock %}

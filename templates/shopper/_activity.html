@@ -1,0 +1,14 @@
+<li class="activity{% if planned %} activity--planned{% endif %}">
+  <div class="activity__when"><strong>{{ a.occurred_at|date:"j M" }}</strong><div class="muted small">{{ a.occurred_at|date:"H:i" }} · {{ a.get_type_display }}</div></div>
+  <div class="activity__body">
+    {{ a.notes|linebreaksbr }}
+    {% if a.contact_job_title %}<div class="muted small">With: {{ a.contact_job_title }}</div>{% endif %}
+  </div>
+  {% if editable %}
+    <div class="activity__actions">
+      {% url 'shopper:activity_edit' a.pk as edit_url %}
+      <a href="{{ edit_url }}" hx-get="{{ edit_url }}" hx-target="#modal">Edit</a>
+      <form method="post" action="{% url 'shopper:activity_delete' a.pk %}">{% csrf_token %}<button class="btn btn--link" type="submit">Delete</button></form>
+    </div>
+  {% endif %}
+</li>

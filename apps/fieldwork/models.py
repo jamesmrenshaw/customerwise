@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+from simple_history.models import HistoricalRecords
 
 from apps.core.models import BaseModel
 
@@ -74,3 +75,49 @@ class Assignment(BaseModel):
     @property
     def is_open(self):
         return self.closed_at is None
+
+
+class ActivityQuerySet(models.QuerySet):
+    def current(self):
+        return self.filter(deleted_at__isnull=True)
+
+
+class Activity(BaseModel):
+    """A contact attempt, call, meeting or note on an assignment (CW-030, CW-031).
+
+    People are recorded by job title only: no names, emails, phone numbers or profiles (D21).
+    A date in the future makes it a planned activity. Edits and deletions are kept in history
+    for staff (D10); deleting only sets deleted_at.
+    """
+
+    class Type(models.TextChoices):
+        EMAIL = "email", "Email"
+        PHONE = "phone", "Phone call"
+        VIDEO = "video", "Video call"
+        MEETING = "meeting", "Meeting"
+        WEB = "web", "Web form or chat"
+        NOTE = "note", "Note"
+
+    assignment = models.ForeignKey(Assignment, on_delete=models.PROTECT, related_name="activities")
+    type = models.CharField(max_length=20, choices=Type, default=Type.EMAIL)
+    occurred_at = models.DateTimeField("Date and time")
+    contact_job_title = models.CharField("Job title of person contacted", max_length=150, blank=True)
+    notes = models.TextField()
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="+"
+    )
+    deleted_at = models.DateTimeField(null=True, blank=True)
+
+    history = HistoricalRecords()
+    objects = ActivityQuerySet.as_manager()
+
+    class Meta:
+        ordering = ["-occurred_at", "-created_at"]
+        verbose_name_plural = "activities"
+
+    def __str__(self):
+        return f"{self.get_type_display()} on {self.occurred_at:%d %b %Y}"
+
+    @property
+    def is_planned(self):
+        return self.occurred_at > timezone.now()

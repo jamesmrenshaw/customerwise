@@ -1,0 +1,55 @@
+{% extends "base.html" %}{% load staff_tags %}
+{% block title %}My assignments · Customer Wise{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>My assignments</h1>
+    <p class="lead">Organisations you are researching, across your projects.</p>
+  </div>
+  {% if can_add_target %}
+    {% url 'shopper:target_add' as add_url %}
+    <a class="btn btn--primary" href="{{ add_url }}" hx-get="{{ add_url }}" hx-target="#modal">+ Add target organisation</a>
+  {% endif %}
+</div>
+
+<form class="filters" method="get">
+  <div class="field">
+    <label for="project">Project</label>
+    <select class="input" id="project" name="project">
+      <option value="">All projects</option>
+      {% for p in projects %}<option value="{{ p.pk }}" {% if p.pk|stringformat:"s" == project_id %}selected{% endif %}>{{ p.shopper_facing_name }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="field">
+    <label for="stage">Stage</label>
+    <select class="input" id="stage" name="stage">
+      {% for key, label in stage_filters %}<option value="{{ key }}" {% if key == stage %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+  </div>
+  <button class="btn" type="submit">Show</button>
+  <p class="muted small">{{ assignments|length }} assignment{{ assignments|length|pluralize }}</p>
+</form>
+
+<div class="table-wrap">
+  <table class="table">
+    <thead><tr><th>Target organisation</th><th>Project</th><th>Stage</th><th>Last activity</th><th>Next planned</th><th><span class="visually-hidden">Actions</span></th></tr></thead>
+    <tbody>
+      {% for a in assignments %}
+        <tr>
+          <td>
+            <a class="strong" href="{% url 'shopper:assignment' a.pk %}">{{ a.target.name }}</a>
+            {% if a.target.added_by_shopper and a.target.added_by_id == user.pk %}<div><span class="tag tag--shopper">Added by you</span></div>{% endif %}
+          </td>
+          <td class="muted">{{ a.target.project.shopper_facing_name }}</td>
+          <td><span class="tag {{ a|stage_class }}">{{ a|stage_label }}</span>{% if a.unable_reason %}<div class="muted small">{{ a.get_unable_reason_display }}</div>{% endif %}</td>
+          <td>{{ a.last_done|date:"j M"|default:"—" }}</td>
+          <td>{{ a.next_planned|date:"j M, H:i"|default:"Nothing planned" }}</td>
+          <td class="table__actions"><a href="{% url 'shopper:assignment' a.pk %}">Open</a></td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6" class="table__empty">No assignments match these filters.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

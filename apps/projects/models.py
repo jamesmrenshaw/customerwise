@@ -3,6 +3,7 @@ from urllib.parse import urlsplit
 from django.conf import settings
 from django.db import models
 from django.db.models.functions import Lower
+from simple_history.models import HistoricalRecords
 
 from apps.core.models import BaseModel
 
@@ -122,6 +123,7 @@ class Target(BaseModel):
         null=True, blank=True, help_text="Archived targets keep their history but are hidden."
     )
 
+    history = HistoricalRecords()
     objects = TargetQuerySet.as_manager()
 
     class Meta:

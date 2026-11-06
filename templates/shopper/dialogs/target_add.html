@@ -1,0 +1,18 @@
+{% extends "staff/dialogs/_base.html" %}
+{% block action_url %}{% url 'shopper:target_add' %}{% endblock %}
+{% block hx_url %}{% url 'shopper:target_add' %}{% endblock %}
+{% block cancel_url %}{% url 'shopper:assignments' %}{% endblock %}
+{% block title %}Add target organisation{% endblock %}
+{% block action_label %}Add and assign to me{% endblock %}
+{% block body %}
+  <p class="muted small">It's assigned to you straight away, so you can start fieldwork. Customer Wise can see who added it.</p>
+  {% include "staff/_field.html" with field=form.project %}
+  {% include "staff/_field.html" with field=form.name %}
+  {% include "staff/_field.html" with field=form.website %}
+  {% if duplicate %}
+    <div class="banner banner--warn" role="alert">
+      {% if duplicate.own %}<strong>You already have this target:</strong> {{ duplicate.own.name }}{% if duplicate.own.website %} ({{ duplicate.own.website }}){% endif %}.
+      {% else %}<strong>This organisation may already be on this project.</strong> Check with Customer Wise before adding it, so two people don't contact the same organisation.{% endif %}
+    </div>
+  {% endif %}
+{% endblock %}

@@ -28,6 +28,10 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6"/><path d="M20 4 10 14"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>
           </a>
         </nav>
+      {% elif user.is_authenticated and user.is_shopper %}
+        <nav class="main-nav" aria-label="Main">
+          <a href="{% url 'shopper:assignments' %}" aria-current="page">My assignments</a>
+        </nav>
       {% endif %}
       {% block nav %}{% endblock %}
       {% if user.is_authenticated %}

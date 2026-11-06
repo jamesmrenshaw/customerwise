@@ -6,6 +6,7 @@ dependencies = [
     "django>=6,<7",
     "django-anymail[brevo]>=15.2",
     "django-environ>=0.14.0",
+    "django-simple-history>=3.13.0",
     "django-storages[s3]>=1.14.6",
     "gunicorn>=26.2.0",
     "psycopg[binary]>=3.3.8",

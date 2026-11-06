@@ -40,3 +40,26 @@ def find_duplicate_targets(project, name, website="", exclude=None):
     if exclude is not None:
         targets = targets.exclude(pk=exclude.pk)
     return targets
+
+
+def last_acknowledged_brief(user, project):
+    ack = (
+        BriefAcknowledgement.objects.filter(user=user, brief_version__project=project)
+        .select_related("brief_version")
+        .order_by("-brief_version__number")
+        .first()
+    )
+    return ack.brief_version if ack else None
+
+
+def brief_changes(old_text, new_text):
+    """Line-by-line changes between two brief versions: [("added"|"removed", line), ...]."""
+    import difflib
+
+    changes = []
+    for line in difflib.ndiff((old_text or "").splitlines(), (new_text or "").splitlines()):
+        if line.startswith("+ ") and line[2:].strip():
+            changes.append(("added", line[2:]))
+        elif line.startswith("- ") and line[2:].strip():
+            changes.append(("removed", line[2:]))
+    return changes
