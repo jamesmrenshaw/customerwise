@@ -26,7 +26,7 @@ Decisions made 5–6 Nov 2026:
 - **One Django service.** The server renders the pages and HTMX handles the partial updates.
 - **No task queue for the pilot.** Without malware scanning nothing needs a worker. Emails go out over the Brevo API inside the request, and exports are generated when staff request them.
 - **Railway project (EU), per environment:**
-  - **web:** the Django app in a Docker image, run by gunicorn. Before each deploy, `manage.py migrate` runs.
+  - **web:** the Django app in a Docker image, run by gunicorn. The container runs `manage.py migrate` before starting gunicorn (Railway ignores the pre-deploy setting in `railway.json` for these services).
   - **Postgres**
   - **Bucket:** private storage for evidence and exports.
 - **Expected cost:** about $5–10 a month.
