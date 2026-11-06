@@ -39,4 +39,4 @@ uv run pytest
 
 ## Deployment
 
-Railway builds the `Dockerfile` and runs `migrate` before each deploy (`railway.json`). The health check is `/healthz`. Each environment needs Postgres, a bucket and the variables listed in `.env.example`.
+Railway finds and builds the `Dockerfile` automatically; there is no Railway config file. The container runs `migrate` before starting gunicorn. Set the health check path to `/healthz` in each service's Railway settings. Each environment needs Postgres, a bucket and the variables listed in `.env.example`.
