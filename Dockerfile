@@ -27,4 +27,5 @@ RUN useradd --create-home --uid 1000 app && chown -R app /app
 USER app
 
 EXPOSE 8000
-CMD ["sh", "-c", "gunicorn config.wsgi --bind 0.0.0.0:${PORT:-8000} --workers ${WEB_CONCURRENCY:-2} --access-logfile - --forwarded-allow-ips='*'"]
+# exec makes gunicorn PID 1 so it receives SIGTERM from Railway and shuts down gracefully.
+CMD ["sh", "-c", "exec gunicorn config.wsgi --bind 0.0.0.0:${PORT:-8000} --workers ${WEB_CONCURRENCY:-2} --access-logfile - --forwarded-allow-ips='*'"]
