@@ -11,17 +11,16 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 # System libraries for WeasyPrint (PDF export, CUS-142) plus a fallback font, and the PostgreSQL 18
 # client for nightly backups (pg_dump must be at least the server's version, so it comes from the
-# PostgreSQL project's repository rather than Debian's).
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates curl \
-       libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 fonts-dejavu-core \
-    && install -d /usr/share/postgresql-common/pgdg \
-    && curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+# PostgreSQL project's repository rather than Debian's). The repository's signing key is kept in the
+# repo (docker/apt.postgresql.org.asc, fingerprint B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8) so
+# builds don't depend on downloading it; apt retries flaky downloads.
+COPY docker/apt.postgresql.org.asc /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
+RUN echo 'Acquire::Retries "5";' > /etc/apt/apt.conf.d/80-retries \
     && . /etc/os-release \
     && echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
     && apt-get update \
-    && apt-get install -y --no-install-recommends postgresql-client-18 \
-    && apt-get purge -y curl && apt-get autoremove -y \
+    && apt-get install -y --no-install-recommends \
+       libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 fonts-dejavu-core postgresql-client-18 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=ghcr.io/astral-sh/uv:0.13.7 /uv /bin/uv
