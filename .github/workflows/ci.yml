@@ -40,6 +40,13 @@ jobs:
           DJANGO_SETTINGS_MODULE: config.settings.test
       - name: Tests
         run: uv run pytest
+      - name: Static files build as in the Docker image
+        # The manifest storage fails on references to missing files (e.g. source maps).
+        run: uv run python manage.py collectstatic --noinput --clear
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings.prod
+          DJANGO_SECRET_KEY: ci-build-only
+          DJANGO_ALLOWED_HOSTS: example.up.railway.app
       - name: Production settings pass the deployment checklist
         run: |
           export DJANGO_SECRET_KEY="$(python3 -c 'import secrets; print(secrets.token_urlsafe(50))')"
