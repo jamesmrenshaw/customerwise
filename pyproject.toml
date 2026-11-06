@@ -11,6 +11,8 @@ dependencies = [
     "gunicorn>=26.2.0",
     "nh3>=0.3.7",
     "psycopg[binary]>=3.3.8",
+    "python-docx>=1.2.0",
+    "weasyprint>=70.0",
     "whitenoise>=6.12.0",
 ]
 

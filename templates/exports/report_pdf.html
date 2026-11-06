@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<title>{{ project_name }} · {{ target }}</title>
+<style>
+  @font-face { font-family: "Nunito Sans"; src: url("file://{{ font_path }}") format("woff2"); font-weight: 200 1000; }
+  @page { size: A4; margin: 22mm 20mm 20mm; @bottom-left { content: "Customer Wise · " string(project-name); font: 8pt "Nunito Sans", sans-serif; color: #505862; } @bottom-right { content: "Page " counter(page) " of " counter(pages); font: 8pt "Nunito Sans", sans-serif; color: #505862; } }
+  @page title { margin: 0; @bottom-left { content: none; } @bottom-right { content: none; } }
+  html { font: 10.5pt/1.5 "Nunito Sans", Arial, sans-serif; color: #16191d; }
+  .title-page { page: title; height: 297mm; box-sizing: border-box; padding: 28mm 24mm; display: flex; flex-direction: column; border-top: 10mm solid #3dc1cb; }
+  .title-page img { width: 70mm; }
+  .title-page__body { margin-top: 70mm; }
+  .eyebrow { color: #007480; font-weight: 800; letter-spacing: 0.12em; font-size: 10pt; text-transform: uppercase; }
+  .title-page h1 { font-size: 28pt; line-height: 1.15; margin: 4mm 0 6mm; }
+  .title-page .target { font-size: 16pt; margin: 0; }
+  .title-page .date { color: #505862; margin-top: 2mm; }
+  .report { page-break-before: always; }
+  .running-name { string-set: project-name content(); color: #007480; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; font-size: 9pt; margin: 0 0 1mm; }
+  h2.report__title { font-size: 20pt; margin: 0 0 6mm; }
+  .key-facts { background: #f6f7f9; border-radius: 3mm; padding: 4mm 5mm; margin-bottom: 8mm; }
+  .key-facts table { width: 100%; border-collapse: collapse; }
+  .key-facts th { text-align: left; width: 42%; padding: 1.5mm 4mm 1.5mm 0; vertical-align: top; }
+  .key-facts td { padding: 1.5mm 0; vertical-align: top; }
+  h3 { font-size: 14pt; margin: 8mm 0 3mm; page-break-after: avoid; }
+  h4 { font-size: 11pt; margin: 5mm 0 1.5mm; page-break-after: avoid; }
+  table.qa { width: 100%; border-collapse: collapse; }
+  table.qa th, table.qa td { border: 0.3mm solid #dde1e6; padding: 2.5mm 3mm; vertical-align: top; text-align: left; }
+  table.qa th { width: 36%; background: #f6f7f9; font-weight: 700; }
+  table.qa tr { page-break-inside: avoid; }
+  .answer div, .answer p { margin: 0 0 2mm; }
+  .answer ul { margin: 1mm 0 2mm; padding-left: 6mm; }
+  .no-answer { color: #505862; font-style: italic; }
+  .evidence { margin-top: 10mm; page-break-inside: avoid; }
+  .evidence li span { color: #505862; }
+</style>
+</head>
+<body>
+  <section class="title-page">
+    {% if logo_path %}<img src="file://{{ logo_path }}" alt="Customer Wise">{% endif %}
+    <div class="title-page__body">
+      <div class="eyebrow">Mystery shopping report</div>
+      <h1>{{ project_name }}</h1>
+      <p class="target">{{ target }}</p>
+      <p class="date">{{ date|date:"j F Y" }}</p>
+    </div>
+  </section>
+
+  <section class="report">
+    <p class="running-name">{{ project_name }}</p>
+    <h2 class="report__title">{{ target }}</h2>
+    {% if document.key_facts %}
+      <div class="key-facts"><table>
+        {% for item in document.key_facts %}<tr><th>{{ item.prompt }}</th><td class="answer">{% if item.blank %}<span class="no-answer">No answer</span>{% else %}{{ item.html }}{% endif %}</td></tr>{% endfor %}
+      </table></div>
+    {% endif %}
+
+    {% for section in document.sections %}
+      <h3>{{ section.title }}</h3>
+      {% if section.style == "qa_table" %}
+        <table class="qa">{% for item in section.items %}<tr><th>{{ item.prompt }}</th><td class="answer">{% if item.blank %}<span class="no-answer">No answer</span>{% else %}{{ item.html }}{% endif %}</td></tr>{% endfor %}</table>
+      {% elif section.style == "headings" %}
+        {% for item in section.items %}<h4>{{ item.prompt }}</h4><div class="answer">{% if item.blank %}<span class="no-answer">No answer</span>{% else %}{{ item.html }}{% endif %}</div>{% endfor %}
+      {% else %}
+        {% for item in section.items %}<div class="answer">{% if not item.blank %}{{ item.html }}{% endif %}</div>{% endfor %}
+      {% endif %}
+    {% endfor %}
+
+    <section class="evidence">
+      <h3>Evidence</h3>
+      {% if evidence %}
+        <ul>{% for e in evidence %}<li>{{ e.original_name }} <span>· {{ e.get_category_display }}</span></li>{% endfor %}</ul>
+      {% else %}<p>No evidence files are included with this report.</p>{% endif %}
+    </section>
+  </section>
+</body>
+</html>

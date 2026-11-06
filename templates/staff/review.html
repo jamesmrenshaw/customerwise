@@ -11,7 +11,10 @@
     <p class="lead">Shopper: {{ assignment.shopper }} · Submitted {{ submission.created_at|date:"j M, H:i" }} · Version {{ submission.number }} · Questionnaire v{{ submission.snapshot.questionnaire_version }}</p>
   </div>
   <div class="row">
-    <button class="btn" disabled title="Export comes in the next build step">Export…</button>
+    {% if report.status == "submitted" or report.status == "accepted" %}
+      {% url 'staff:export_report' report.pk as export_url %}
+      <a class="btn" href="{{ export_url }}" hx-get="{{ export_url }}" hx-target="#modal">Export…</a>
+    {% endif %}
     {% if can_review %}
       {% url 'staff:return_report' report.pk as ret_url %}
       <a class="btn btn--warn" href="{{ ret_url }}" hx-get="{{ ret_url }}" hx-target="#modal">Return with comments ({{ draft_count }})</a>
@@ -36,7 +39,7 @@
 
 <div class="layout-split">
   <article class="card review-doc layout-split__main" aria-label="Submitted report">
-    <p class="eyebrow">Report as submitted · the export adds a title page</p>
+    <p class="eyebrow">Report as submitted · the export adds a Customer Wise title page</p>
     <h2 class="review-doc__title">{{ assignment.target.name }}</h2>
 
     {% if document.key_facts %}

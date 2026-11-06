@@ -29,6 +29,8 @@ INSTALLED_APPS = [
     "apps.fieldwork",
     "apps.reports",
     "apps.evidence",
+    "apps.audit",
+    "apps.exports",
     "apps.staff",
     "apps.shopper",
 ]

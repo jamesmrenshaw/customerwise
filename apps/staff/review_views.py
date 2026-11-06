@@ -284,3 +284,43 @@ def accept_report(request, pk):
     else:
         messages.success(request, f"Report on {report.assignment.target} accepted.")
     return redirect(_review_url(report))
+
+
+# --- Export (MVP-02, CUS-142) -------------------------------------------------------------
+
+
+@staff_required
+def export_report(request, pk):
+    """GET: the export dialog. POST: download the PDF/Word report, or a ZIP with chosen evidence."""
+    from django.http import HttpResponse
+
+    from apps.core.ui import dialog
+    from apps.exports import builder
+
+    report = _report(pk)
+    submission = review.latest_submission(report)
+    if not builder.exportable(report):
+        messages.error(request, "Only a submitted or accepted report can be exported.")
+        return redirect(_review_url(report))
+    evidence = report.assignment.evidence.filter(
+        pk__in=[e["id"] for e in submission.snapshot.get("evidence", [])]
+    ).order_by("created_at")
+    if request.method == "POST":
+        try:
+            result = builder.export_report(
+                report,
+                user=request.user,
+                fmt=request.POST.get("format", builder.PDF),
+                evidence_ids=request.POST.getlist("evidence"),
+            )
+        except ValidationError as exc:
+            messages.error(request, " ".join(exc.messages))
+            return redirect(_review_url(report))
+        response = HttpResponse(result.content, content_type=result.content_type)
+        response["Content-Disposition"] = f'attachment; filename="{result.filename}"'
+        return response
+    return dialog(
+        request,
+        "staff/dialogs/export.html",
+        {"report": report, "submission": submission, "evidence": evidence},
+    )

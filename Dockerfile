@@ -9,7 +9,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PATH="/opt/venv/bin:$PATH" \
     DJANGO_SETTINGS_MODULE=config.settings.prod
 
-# System libraries for WeasyPrint (PDF export) are added with CUS-142.
+# System libraries for WeasyPrint (PDF export, CUS-142), plus a fallback font.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+       libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 fonts-dejavu-core \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY --from=ghcr.io/astral-sh/uv:0.13.7 /uv /bin/uv
 

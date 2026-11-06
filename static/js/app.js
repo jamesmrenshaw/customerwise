@@ -62,3 +62,12 @@ window.addEventListener("beforeunload", (event) => {
     event.returnValue = "";
   }
 });
+
+// Download dialogs: let the browser handle the file, then close the dialog.
+document.addEventListener("submit", (event) => {
+  const form = event.target;
+  if (form.matches("[data-close-on-submit]")) {
+    const dialog = form.closest("dialog");
+    if (dialog) setTimeout(() => dialog.close(), 300);
+  }
+});

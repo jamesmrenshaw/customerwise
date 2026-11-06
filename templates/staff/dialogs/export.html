@@ -1,0 +1,29 @@
+<dialog class="dialog" aria-labelledby="dialog-title" {% if standalone %}open{% endif %}>
+  {# A normal form post (not HTMX), so the browser downloads the file. #}
+  <form class="dialog__body" method="post" action="{% url 'staff:export_report' report.pk %}" data-close-on-submit>
+    {% csrf_token %}
+    <h2 id="dialog-title">Export report</h2>
+    <p class="muted small">Version {{ submission.number }}, submitted {{ submission.created_at|date:"j M Y" }}. Uses the client-facing project name, with a Customer Wise title page.</p>
+    <fieldset class="stack">
+      <legend class="strong">Format</legend>
+      <div class="row">
+        <label class="check-card"><input type="radio" name="format" value="pdf" checked> <span>PDF</span></label>
+        <label class="check-card"><input type="radio" name="format" value="docx"> <span>Word (.docx)</span></label>
+      </div>
+    </fieldset>
+    <fieldset class="stack">
+      <legend class="strong">Evidence to include</legend>
+      {% for e in evidence %}
+        <label class="check-card"><input type="checkbox" name="evidence" value="{{ e.pk }}" checked> <span>{{ e.original_name }} <span class="muted small">· {{ e.get_category_display }} · {{ e.size|filesizeformat }}</span></span></label>
+      {% empty %}
+        <p class="muted small">No evidence was submitted with this version.</p>
+      {% endfor %}
+      {% if evidence %}<p class="muted small">With evidence ticked, you'll download a ZIP containing the report and those files.</p>{% endif %}
+    </fieldset>
+    <div class="banner banner--warn small"><strong>Check before sending.</strong> The report leaves out the shopper's name, their notes and your review comments, but evidence files can still identify the shopper or the people they spoke to.</div>
+    <div class="dialog__actions">
+      <a class="btn" href="{% url 'staff:review' report.pk %}" data-close-dialog>Cancel</a>
+      <button type="submit" class="btn btn--primary">Download</button>
+    </div>
+  </form>
+</dialog>

@@ -16,6 +16,7 @@ urlpatterns = [
     path("staff/comments/<uuid:pk>/", review_views.comment_update, name="comment_update"),
     path("staff/reports/<uuid:pk>/return/", review_views.return_report, name="return_report"),
     path("staff/reports/<uuid:pk>/accept/", review_views.accept_report, name="accept_report"),
+    path("staff/reports/<uuid:pk>/export/", review_views.export_report, name="export_report"),
     path("projects/<uuid:pk>/targets/", views.targets, name="targets"),
     path("projects/<uuid:pk>/targets/add/", views.target_add, name="target_add"),
     path("projects/<uuid:pk>/questionnaire/", views.questionnaire, name="questionnaire"),
