@@ -10,6 +10,7 @@ from apps.projects.services import has_acknowledged_latest_brief
 from apps.questionnaires.models import Question, QuestionnaireVersion
 from apps.questionnaires.services import current_version
 
+from .formatting import clean
 from .models import Answer, Report, ReportSubmission
 
 
@@ -58,6 +59,8 @@ def save_answer(report, question, value):
     if question.answer_type == Question.AnswerType.DATETIME:
         answer.datetime_value = value or None
         answer.text = ""
+    elif question.answer_type == Question.AnswerType.LONG_TEXT:
+        answer.text = clean(value)  # rich text: only paragraphs, line breaks, bold and bullets survive
     else:
         answer.text = (value or "").strip()
     answer.save()

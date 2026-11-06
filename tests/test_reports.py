@@ -18,7 +18,7 @@ from apps.projects.models import ClientOrganisation, Project, Target
 from apps.questionnaires import services as questionnaires
 from apps.questionnaires.models import Question, QuestionnaireVersion, Section
 from apps.reports import services
-from apps.reports.formatting import render_html
+from apps.reports.formatting import blocks, clean, from_simple_markup
 from apps.reports.models import Report
 
 pytestmark = pytest.mark.django_db
@@ -94,18 +94,36 @@ def q(report, key):
 
 def answer_everything(report):
     services.save_answer(report, q(report, "first-enquiry"), timezone.now())
-    services.save_answer(report, q(report, "structure"), "Per user, billed yearly.")
+    services.save_answer(report, q(report, "structure"), "<div>Per user, billed yearly.</div>")
     services.save_answer(report, q(report, "min-users"), "100")
 
 
 # --- Formatting ---------------------------------------------------------------------------
 
 
-def test_formatting_allows_only_paragraphs_bullets_and_bold():
-    html = render_html("Intro line\nsecond line\n\n- one\n- **two**\n\n<script>alert(1)</script> **bold**")
-    assert html == (
-        "<p>Intro line<br>second line</p><ul><li>one</li><li><strong>two</strong></li></ul>"
-        "<p>&lt;script&gt;alert(1)&lt;/script&gt; <strong>bold</strong></p>"
+def test_rich_text_keeps_only_paragraphs_bold_and_bullets():
+    dirty = (
+        '<h1>Head</h1><div style="color:red" onclick="x()">Intro <b>bold</b><br>line two</div>'
+        '<ul><li>one</li></ul><script>alert(1)</script><a href="https://evil">link</a><img src="x">'
+    )
+    assert clean(dirty) == "Head<div>Intro <strong>bold</strong><br>line two</div><ul><li>one</li></ul>link"
+
+
+def test_blocks_split_paragraphs_lines_and_bullets():
+    html = (
+        "<div>Intro <strong>bold</strong><br>second<br><br>New para</div>"
+        "<ul><li>a</li><li><strong>b</strong></li></ul>"
+    )
+    assert blocks(html) == [
+        ("p", [[("Intro ", False), ("bold", True)], [("second", False)]]),
+        ("p", [[("New para", False)]]),
+        ("ul", [[("a", False)], [("b", True)]]),
+    ]
+
+
+def test_old_markup_answers_convert_to_rich_text():
+    assert from_simple_markup("Intro\n\n- one\n- **two**") == (
+        "<div>Intro</div><ul><li>one</li><li><strong>two</strong></li></ul>"
     )
 
 
@@ -139,7 +157,7 @@ def test_autosave_each_answer_type(as_sam, report):
         )
         assert response.status_code == 200 and b"Saved" in response.content
     answers = services.answers_by_question(report)
-    assert answers[q(report, "structure").pk].text == "Per user."
+    assert answers[q(report, "structure").pk].text == "Per user."  # plain text is kept as-is
     assert timezone.localtime(answers[q(report, "first-enquiry").pk].datetime_value).hour == 10
 
 
@@ -213,12 +231,12 @@ def test_submit_freezes_a_snapshot_completes_and_locks(as_sam, report, sam):
     assert report.status == Report.Status.SUBMITTED and report.version_no == 1
     assert report.assignment.stage == Assignment.Stage.COMPLETE
     submission = report.submissions.get()
-    assert submission.snapshot["sections"][1]["questions"][0]["text"] == "Per user, billed yearly."
+    assert submission.snapshot["sections"][1]["questions"][0]["text"] == "<div>Per user, billed yearly.</div>"
     question = q(report, "structure")
     as_sam.post(
         reverse("reports:autosave", args=[report.pk, question.pk]), {f"q-{question.pk}": "Changed"}, **HTMX
     )
-    assert services.answers_by_question(report)[question.pk].text == "Per user, billed yearly."
+    assert services.answers_by_question(report)[question.pk].text == "<div>Per user, billed yearly.</div>"
     html = as_sam.get(reverse("reports:report", args=[report.assignment_id])).content.decode()
     assert "Submitted" in html and "to Customer Wise</button>" not in html
 
@@ -386,3 +404,42 @@ def test_assignment_page_links_to_the_report(as_sam, assignment, published):
     as_sam.get(reverse("reports:report", args=[assignment.pk]))
     html = as_sam.get(reverse("shopper:assignment", args=[assignment.pk])).content.decode()
     assert "Continue report" in html and "0 of 3 questions" in html
+
+
+def test_rich_answers_are_cleaned_and_blank_ones_count_as_missing(as_sam, report):
+    question = q(report, "structure")
+    url = reverse("reports:autosave", args=[report.pk, question.pk])
+    as_sam.post(url, {f"q-{question.pk}": "<div>Per <b>user</b><script>x()</script></div>"}, **HTMX)
+    answer = services.answers_by_question(report)[question.pk]
+    assert answer.text == "<div>Per <strong>user</strong></div>"
+    as_sam.post(url, {f"q-{question.pk}": "<div><br></div>"}, **HTMX)
+    answer.refresh_from_db()
+    assert not answer.is_answered
+    assert question in services.missing_questions(report)
+
+
+def test_report_page_uses_the_rich_text_editor_under_a_strict_csp(as_sam, report):
+    services.save_answer(report, q(report, "structure"), "<div>Per <strong>user</strong></div>")
+    response = as_sam.get(
+        reverse("reports:report", args=[report.assignment_id]) + f"?s={q(report, 'structure').section_id}"
+    )
+    html = response.content.decode()
+    assert "<trix-editor" in html and 'data-trix-attribute="bold"' in html
+    nonce = html.split('name="trix-csp-nonce" content="')[1].split('"')[0]
+    csp = response["Content-Security-Policy"]
+    assert f"style-src 'self' 'nonce-{nonce}'" in csp
+    assert "unsafe-inline" not in csp
+    assert 'value="&lt;div&gt;Per &lt;strong&gt;user&lt;/strong&gt;&lt;/div&gt;"' in html
+
+
+def test_submitted_report_shows_formatted_answers(as_sam, report):
+    answer_everything(report)
+    services.save_answer(
+        report, q(report, "structure"), "<div>Per <strong>user</strong></div><ul><li>Banded</li></ul>"
+    )
+    services.submit(report, report.assignment.shopper)
+    html = as_sam.get(
+        reverse("reports:report", args=[report.assignment_id]) + f"?s={q(report, 'structure').section_id}"
+    ).content.decode()
+    assert "<trix-editor" not in html
+    assert "<div>Per <strong>user</strong></div><ul><li>Banded</li></ul>" in html

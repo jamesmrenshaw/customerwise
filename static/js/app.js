@@ -25,26 +25,16 @@ document.addEventListener(
   true,
 );
 
-// Report editor: formatting buttons insert the simple markup (D06) and trigger autosave.
-document.addEventListener("click", (event) => {
-  const button = event.target.closest("[data-format]");
-  if (!button) return;
-  const field = document.getElementById(button.dataset.for);
-  if (!field) return;
-  const { selectionStart: start, selectionEnd: end, value } = field;
-  if (button.dataset.format === "bold") {
-    const selected = value.slice(start, end) || "bold text";
-    field.setRangeText(`**${selected}**`, start, end, "end");
-  } else {
-    const lineStart = value.lastIndexOf("\n", start - 1) + 1;
-    field.setRangeText("- ", lineStart, lineStart, "end");
-  }
-  field.focus();
-  field.dispatchEvent(new Event("input", { bubbles: true }));
+const unsaved = new Set();
+
+// Report editor (Trix): answers are text only, so files can't be dropped or pasted in.
+// Evidence goes through the upload checks instead.
+document.addEventListener("trix-file-accept", (event) => event.preventDefault());
+document.addEventListener("trix-change", (event) => {
+  if (event.target.matches("[data-autosave]")) unsaved.add(event.target);
 });
 
 // Autosave: warn before leaving with unsaved changes, and say clearly when a save fails.
-const unsaved = new Set();
 document.addEventListener("input", (event) => {
   if (event.target.matches("[data-autosave]")) unsaved.add(event.target);
 });

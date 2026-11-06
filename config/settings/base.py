@@ -60,6 +60,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "apps.core.context_processors.nav_section",
+                "django.template.context_processors.csp",
             ],
         },
     },
@@ -117,7 +118,8 @@ SECURE_REFERRER_POLICY = "same-origin"
 SECURE_CSP = {
     "default-src": [CSP.SELF],
     "script-src": [CSP.SELF],
-    "style-src": [CSP.SELF],
+    # Trix (the report editor) adds its own <style> blocks; they carry the per-request nonce.
+    "style-src": [CSP.SELF, CSP.NONCE],
     "img-src": [CSP.SELF, "data:"],
     "font-src": [CSP.SELF],
     "connect-src": [CSP.SELF],

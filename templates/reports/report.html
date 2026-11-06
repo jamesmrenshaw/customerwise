@@ -1,6 +1,11 @@
 {% extends "base.html" %}{% load report_tags %}
 {% block title %}Report: {{ target.name }} · Customer Wise{% endblock %}
 {% block page_class %}page--with-bar{% endblock %}
+{% block extra_head %}{% load static %}
+  <meta name="trix-csp-nonce" content="{{ csp_nonce }}">
+  <link rel="stylesheet" href="{% static 'vendor/trix/trix.css' %}">
+  <script src="{% static 'vendor/trix/trix.umd.min.js' %}" defer></script>
+{% endblock %}
 {% block content %}
 <nav class="breadcrumb" aria-label="Breadcrumb"><a href="{% url 'shopper:assignments' %}">My assignments</a> / <a href="{% url 'shopper:assignment' assignment.pk %}">{{ target.name }}</a> / <span>Report</span></nav>
 <div class="page-head">
@@ -68,21 +73,28 @@
         <div class="stack-lg">
           {% for item in items %}{% with q=item.q %}
             <div class="question{% if item.missing %} question--missing{% endif %}" id="q-{{ q.pk }}">
-              <label class="question__prompt" for="f-{{ q.pk }}">{{ item.n }}. {{ q.prompt }}</label>
+              <label class="question__prompt" id="l-{{ q.pk }}" for="f-{{ q.pk }}">{{ item.n }}. {{ q.prompt }}</label>
               {% if q.guidance %}<p class="question__guidance">Guidance: {{ q.guidance }}</p>{% endif %}
               {% url 'reports:autosave' report.pk q.pk as save_url %}
               {% if q.answer_type == "long_text" %}
                 {% if editable %}
-                <div class="format-bar" role="toolbar" aria-label="Formatting for question {{ item.n }}">
-                  <button type="button" class="btn btn--icon" data-format="bold" data-for="f-{{ q.pk }}" aria-label="Bold"><strong>B</strong></button>
-                  <button type="button" class="btn btn--icon" data-format="bullet" data-for="f-{{ q.pk }}" aria-label="Bulleted list">•</button>
-                  <span class="muted small">**bold** · start a line with - for a bullet · blank line for a new paragraph</span>
-                </div>
+                  <input type="hidden" id="f-{{ q.pk }}" name="q-{{ q.pk }}" value="{{ item.text }}">
+                  <trix-toolbar id="tb-{{ q.pk }}">
+                    <div class="rich-toolbar" role="toolbar" aria-label="Formatting for question {{ item.n }}">
+                      <button type="button" class="rich-toolbar__btn" data-trix-attribute="bold" data-trix-key="b" title="Bold (Ctrl+B)" aria-label="Bold"><strong>B</strong></button>
+                      <button type="button" class="rich-toolbar__btn" data-trix-attribute="bullet" title="Bulleted list" aria-label="Bulleted list">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>
+                      </button>
+                      <span class="rich-toolbar__sep" aria-hidden="true"></span>
+                      <button type="button" class="rich-toolbar__btn" data-trix-action="undo" data-trix-key="z" title="Undo" aria-label="Undo">↶</button>
+                      <button type="button" class="rich-toolbar__btn" data-trix-action="redo" data-trix-key="shift+z" title="Redo" aria-label="Redo">↷</button>
+                    </div>
+                  </trix-toolbar>
+                  <trix-editor class="rich-editor" input="f-{{ q.pk }}" toolbar="tb-{{ q.pk }}" aria-labelledby="l-{{ q.pk }}" data-autosave
+                    hx-post="{{ save_url }}" hx-trigger="trix-change delay:1500ms, trix-blur" hx-include="#f-{{ q.pk }}" hx-target="#save-status" hx-swap="innerHTML"></trix-editor>
+                {% else %}
+                  <div class="answer-preview rich-content">{% if item.text %}{{ item.text|formatted }}{% else %}<span class="muted">No answer.</span>{% endif %}</div>
                 {% endif %}
-                <textarea class="input" id="f-{{ q.pk }}" name="q-{{ q.pk }}" rows="5" data-autosave
-                  hx-post="{{ save_url }}" hx-trigger="input changed delay:1500ms, blur changed" hx-target="#save-status" hx-swap="innerHTML"
-                  {% if not editable %}disabled{% endif %}>{{ item.text }}</textarea>
-                {% if not editable and item.text %}<div class="answer-preview">{{ item.text|formatted }}</div>{% endif %}
               {% elif q.answer_type == "datetime" %}
                 <input class="input input--auto" type="datetime-local" id="f-{{ q.pk }}" name="q-{{ q.pk }}" value="{{ item.datetime|date:'Y-m-d\TH:i' }}" data-autosave
                   hx-post="{{ save_url }}" hx-trigger="change" hx-target="#save-status" hx-swap="innerHTML" {% if not editable %}disabled{% endif %}>

@@ -256,3 +256,17 @@ textarea.input { resize: vertical; line-height: 1.6; }
 .facts { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; margin: 16px 0; }
 .facts dt { color: var(--muted); }
 .facts dd { margin: 0; }
+
+/* Rich-text answers (Trix) */
+.rich-toolbar { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-bottom: 6px; }
+.rich-toolbar__btn { min-width: 36px; min-height: 36px; border: 1px solid #c5cbd2; border-radius: 6px; background: var(--surface); color: var(--ink); font: inherit; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.rich-toolbar__btn:hover { background: var(--bg); }
+.rich-toolbar__btn.trix-active { background: var(--cw-blue-tint); border-color: var(--cw-blue); color: var(--cw-link-hover); }
+.rich-toolbar__btn:disabled { opacity: 0.45; cursor: default; }
+.rich-toolbar__sep { width: 1px; height: 24px; background: var(--border); margin: 0 4px; }
+trix-toolbar .trix-dialogs { display: none; }
+.rich-editor { display: block; min-height: 120px; padding: 10px 12px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--surface); font: inherit; line-height: 1.6; }
+.rich-editor:focus { outline: 3px solid var(--cw-blue-light); outline-offset: 2px; }
+.question--missing .rich-editor { border: 2px solid var(--status-error); }
+.rich-editor ul, .rich-content ul { margin: 6px 0; padding-left: 24px; }
+.rich-content div, .rich-content p { margin: 0 0 8px; }

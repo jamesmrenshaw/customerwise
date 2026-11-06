@@ -55,7 +55,9 @@ class Answer(BaseModel):
 
     @property
     def is_answered(self):
-        return bool(self.text.strip()) or self.datetime_value is not None
+        from .formatting import is_blank
+
+        return not is_blank(self.text) or self.datetime_value is not None
 
 
 class ReportSubmission(BaseModel):

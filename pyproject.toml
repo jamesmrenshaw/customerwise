@@ -9,6 +9,7 @@ dependencies = [
     "django-simple-history>=3.13.0",
     "django-storages[s3]>=1.14.6",
     "gunicorn>=26.2.0",
+    "nh3>=0.3.7",
     "psycopg[binary]>=3.3.8",
     "whitenoise>=6.12.0",
 ]
