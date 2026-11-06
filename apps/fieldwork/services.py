@@ -72,3 +72,14 @@ def withdraw(assignment, *, note=""):
         raise ValidationError("Only an open assignment can be withdrawn.")
     _close(assignment, Assignment.ClosedReason.WITHDRAWN, note)
     return assignment
+
+
+@transaction.atomic
+def archive_target(target, *, note=""):
+    """Hide a target from lists. Any open assignment is withdrawn first; nothing is deleted (MVP-01)."""
+    for assignment in target.assignments.open():
+        withdraw(assignment, note=note or "Target archived")
+    if target.archived_at is None:
+        target.archived_at = timezone.now()
+        target.save(update_fields=["archived_at", "updated_at"])
+    return target

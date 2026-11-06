@@ -1,6 +1,6 @@
 from django.db import connection
 from django.http import HttpResponse
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET
 
@@ -16,4 +16,6 @@ def healthz(request):
 
 @require_GET
 def home(request):
+    if request.user.is_authenticated and request.user.is_staff:
+        return redirect("staff:projects")
     return render(request, "core/home.html")

@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Questionnaire · {{ project.internal_name }}{% endblock %}
+{% block content %}
+{% include "staff/_project_header.html" %}
+
+{% if not versions %}
+  <section class="card empty-state">
+    <h2>No questionnaire yet</h2>
+    <p class="muted">Each project has its own questionnaire. Start a blank draft, or start from the pilot questionnaire (14 sections, 46 questions) and adjust it.</p>
+    <div class="row">
+      <form method="post" action="{% url 'staff:questionnaire_start' project.pk %}">{% csrf_token %}<input type="hidden" name="template" value="pilot"><button class="btn btn--primary">Start from the pilot questionnaire</button></form>
+      <form method="post" action="{% url 'staff:questionnaire_start' project.pk %}">{% csrf_token %}<button class="btn">Start a blank draft</button></form>
+    </div>
+  </section>
+{% else %}
+  <section class="version-bar" aria-label="Versions">
+    <div class="version-chips" role="group" aria-label="Choose a version">
+      {% for v in versions %}
+        <a class="version-chip" href="?v={{ v.number }}" {% if v == version %}aria-current="true"{% endif %}>
+          <strong>Version {{ v.number }}</strong> · {{ v.get_status_display }}
+          <span>{% if v.is_draft %}Editing{% elif v == current %}Used by new reports{% else %}Earlier version{% endif %}</span>
+        </a>
+      {% endfor %}
+    </div>
+    <div class="row">
+      {% if version.is_draft %}
+        {% url 'staff:version_publish' version.pk as pub %}
+        <a class="btn btn--primary" href="{{ pub }}" hx-get="{{ pub }}" hx-target="#modal">Publish version {{ version.number }}</a>
+      {% elif not draft %}
+        <form method="post" action="{% url 'staff:version_new_draft' version.pk %}">{% csrf_token %}<button class="btn">Start a new draft from this version</button></form>
+      {% endif %}
+    </div>
+  </section>
+
+  {% if not version.is_draft %}
+    <div class="banner banner--info"><strong>Published versions can't be changed</strong>, because submitted reports keep the questions they answered.
+      {% if draft %}<a href="?v={{ draft.number }}">Version {{ draft.number }}</a> is the draft being edited.{% else %}Start a new draft to make changes.{% endif %}</div>
+  {% endif %}
+
+  <div class="layout-split layout-split--nav">
+    <nav class="card section-nav" aria-label="Sections">
+      <ul>
+        {% for s in sections %}
+          <li><a href="?v={{ version.number }}&s={{ s.pk }}" {% if s == section %}aria-current="page"{% endif %}>
+            <span>{{ s.title }}<span class="section-nav__style">{{ s.get_display_style_display }}</span></span>
+            <span class="{% if s.n %}muted{% else %}text-error{% endif %} small">{% if s.n %}{{ s.n }} Q{% else %}Empty{% endif %}</span>
+          </a></li>
+        {% endfor %}
+      </ul>
+      {% if version.is_draft %}
+        <form method="post" action="{% url 'staff:section_add' version.pk %}">{% csrf_token %}<button class="btn btn--sm btn--block">+ Add section</button></form>
+      {% endif %}
+    </nav>
+
+    {% if section %}
+    <form class="card layout-split__main" method="post" action="{% url 'staff:section_save' section.pk %}">
+      {% csrf_token %}
+      {% if version.is_draft %}
+        <div class="grid-2">
+          {% include "staff/_field.html" with field=section_form.title %}
+          {% include "staff/_field.html" with field=section_form.display_style %}
+        </div>
+        <p class="muted small">Q&amp;A table: question and answer columns. Questions as headings: narrative, question as a subheading. Answers only: questions hidden, answers read as prose. Key facts: short labelled lines at the top of the report. The shopper's form is the same whatever the style.</p>
+        {{ formset.management_form }}
+        {% if formset.non_form_errors %}<div class="banner banner--error">{{ formset.non_form_errors }}</div>{% endif %}
+      {% else %}
+        <h2>{{ section.title }} <span class="tag tag--none">{{ section.get_display_style_display }}</span></h2>
+      {% endif %}
+
+      <h3>Questions <span class="muted small">· every question must be answered before a report is submitted</span></h3>
+      {% if version.is_draft %}
+        <ol class="question-list">
+          {% for qform in formset %}{% with q=qform.instance %}
+            <li class="question-card">
+              {{ qform.id }}
+              <div class="question-card__order">
+                <span>{{ forloop.counter }}</span>
+                <button class="btn btn--icon" name="action" value="up:{{ q.pk }}" aria-label="Move question {{ forloop.counter }} up" {% if forloop.first %}disabled{% endif %}>↑</button>
+                <button class="btn btn--icon" name="action" value="down:{{ q.pk }}" aria-label="Move question {{ forloop.counter }} down" {% if forloop.last %}disabled{% endif %}>↓</button>
+              </div>
+              <div class="question-card__body">
+                {% include "staff/_field.html" with field=qform.prompt label="Question" %}
+                <div class="grid-2">
+                  {% include "staff/_field.html" with field=qform.answer_type %}
+                  {% include "staff/_field.html" with field=qform.guidance hide_optional=True %}
+                </div>
+                <div class="row-between"><span class="muted small">Key: {{ q.key }}</span>
+                  <button class="btn btn--sm" name="action" value="remove:{{ q.pk }}">Remove</button></div>
+              </div>
+            </li>
+          {% endwith %}{% empty %}
+            <li class="empty-note">No questions yet. A section needs at least one question before the questionnaire can be published.</li>
+          {% endfor %}
+        </ol>
+        <div class="form-actions form-actions--split">
+          <div class="row">
+            <button class="btn" name="action" value="add">+ Add question</button>
+            <button class="btn btn--danger-outline" name="action" value="delete_section">Remove section</button>
+          </div>
+          <button class="btn btn--primary" name="action" value="save">Save section</button>
+        </div>
+      {% else %}
+        <ol class="question-list">
+          {% for q in section.questions.all %}
+            <li class="question-card"><div class="question-card__order"><span>{{ forloop.counter }}</span></div>
+              <div class="question-card__body"><p class="strong">{{ q.prompt }}</p>
+                <p class="muted small">{{ q.get_answer_type_display }} · key {{ q.key }}</p>
+                {% if q.guidance %}<p class="quote small">Guidance: {{ q.guidance }}</p>{% endif %}</div></li>
+          {% endfor %}
+        </ol>
+      {% endif %}
+    </form>
+    {% endif %}
+  </div>
+{% endif %}
+{% endblock %}

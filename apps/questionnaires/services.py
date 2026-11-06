@@ -119,3 +119,73 @@ def create_draft_from_data(project, data):
 def load_json(path):
     with open(path, encoding="utf-8") as f:
         return json.load(f)
+
+
+# --- Editing a draft (questionnaire builder) ------------------------------------------
+
+
+def _require_draft(version):
+    if not version.is_draft:
+        raise ValidationError("Published versions can't be changed. Start a new draft instead.")
+
+
+def unique_key(version, base):
+    existing = set(Question.objects.filter(section__version=version).values_list("key", flat=True))
+    key, n = base, 1
+    while key in existing:
+        n += 1
+        key = f"{base}-{n}"
+    return key
+
+
+@transaction.atomic
+def add_section(version, title="New section", display_style=Section.DisplayStyle.QA_TABLE):
+    _require_draft(version)
+    last = version.sections.aggregate(m=Max("order"))["m"] or 0
+    return Section.objects.create(version=version, title=title, display_style=display_style, order=last + 10)
+
+
+@transaction.atomic
+def add_question(section, prompt="New question"):
+    _require_draft(section.version)
+    last = section.questions.aggregate(m=Max("order"))["m"] or 0
+    count = section.questions.count() + 1
+    return Question.objects.create(
+        section=section,
+        order=last + 10,
+        prompt=prompt,
+        key=unique_key(section.version, make_key(section.title, count)),
+    )
+
+
+@transaction.atomic
+def move_question(question, direction):
+    """Swap a question with its neighbour. direction is -1 (up) or +1 (down)."""
+    section = question.section
+    _require_draft(section.version)
+    questions = list(section.questions.order_by("order", "created_at"))
+    i = questions.index(question)
+    j = i + direction
+    if 0 <= j < len(questions):
+        questions[i], questions[j] = questions[j], questions[i]
+    for n, q in enumerate(questions, start=1):
+        if q.order != n * 10:
+            q.order = n * 10
+            q.save(update_fields=["order", "updated_at"])
+
+
+@transaction.atomic
+def delete_question(question):
+    _require_draft(question.section.version)
+    question.delete()
+
+
+@transaction.atomic
+def delete_section(section):
+    _require_draft(section.version)
+    section.delete()
+
+
+def open_report_drafts(version):
+    """Reports still being drafted on this version. Reports arrive in step 5; until then, none."""
+    return 0

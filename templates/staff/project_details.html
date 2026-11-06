@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}{% if project %}{{ project.internal_name }}{% else %}New project{% endif %} · Customer Wise{% endblock %}
+{% block content %}
+{% include "staff/_project_header.html" %}
+
+{% if form.errors %}<div class="banner banner--error" role="alert"><strong>Not saved.</strong> Fix the problems marked below.</div>{% endif %}
+
+<form method="post" class="layout-split">
+  {% csrf_token %}
+  <div class="layout-split__main stack-lg">
+    <section class="card" aria-labelledby="details-h">
+      <h2 id="details-h">Project details</h2>
+      <div class="grid-2">
+        <div>
+          {% include "staff/_field.html" with field=form.client %}
+          <a class="small" href="{% url 'staff:clients' %}">Manage clients</a>
+        </div>
+        {% include "staff/_field.html" with field=form.status help="Shoppers can only work on active projects." %}
+      </div>
+      <h3>Names</h3>
+      <p class="muted small">Each audience sees only its own name. Shoppers must never be able to work out who the client is.</p>
+      <div class="stack">
+        {% include "staff/_field.html" with field=form.internal_name badge="Customer Wise only" badge_class="tag--none" %}
+        {% include "staff/_field.html" with field=form.client_facing_name badge="Exports" badge_class="tag--active" %}
+        {% include "staff/_field.html" with field=form.shopper_facing_name badge="Shoppers" badge_class="tag--done" help="" %}
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="brief-h">
+      <div class="card__head">
+        <h2 id="brief-h">Shopper brief</h2>
+        {% if latest %}<span class="muted small">Current version: v{{ latest.number }}</span>{% endif %}
+      </div>
+      <p class="muted small">Saving a change creates a new version. Shoppers see what changed and must confirm they've read it before submitting a report. Never name the client here.</p>
+      {% include "staff/_field.html" with field=form.brief hide_optional=True %}
+    </section>
+
+    <div class="form-actions">
+      <a class="btn" href="{% if project %}{% url 'staff:project' project.pk %}{% else %}{% url 'staff:projects' %}{% endif %}">Cancel</a>
+      <button type="submit" class="btn btn--primary">{% if project %}Save project{% else %}Create project{% endif %}</button>
+    </div>
+  </div>
+
+  {% if project %}
+  <aside class="layout-split__side stack-lg">
+    <section class="card" aria-labelledby="ack-h">
+      <h2 id="ack-h">Latest brief acknowledged by</h2>
+      <p class="muted small">Shoppers with an open assignment on this project.</p>
+      <ul class="plain-list">
+        {% for a in acknowledgements %}
+          <li class="row-between"><span>{{ a.shopper }}</span><span class="tag {% if a.done %}tag--done{% else %}tag--warn{% endif %}">{% if a.done %}Acknowledged{% else %}Not yet{% endif %}</span></li>
+        {% empty %}
+          <li class="muted">No shoppers assigned yet.</li>
+        {% endfor %}
+      </ul>
+    </section>
+    <section class="card" aria-labelledby="hist-h">
+      <h2 id="hist-h">Brief history</h2>
+      <ol class="plain-list divided">
+        {% for v in history %}
+          <li>
+            <div class="row-between"><strong>Version {{ v.number }}</strong><span class="muted small">{{ v.created_at|date:"j M Y" }}</span></div>
+            <div class="muted small">By {{ v.created_by|default:"—" }} · acknowledged by {% for a in v.acknowledgements.all %}{{ a.user }}{% if not forloop.last %}, {% endif %}{% empty %}nobody yet{% endfor %}</div>
+            <details class="small"><summary>Show text</summary><div class="quote">{{ v.text|linebreaksbr }}</div></details>
+          </li>
+        {% empty %}
+          <li class="muted">No brief saved yet.</li>
+        {% endfor %}
+      </ol>
+    </section>
+  </aside>
+  {% endif %}
+</form>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "base.html" %}{% load staff_tags %}
+{% block title %}Projects · Customer Wise{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Projects</h1>
+    <p class="lead">Set up projects, then follow their fieldwork and reports.</p>
+  </div>
+  <a class="btn btn--primary" href="{% url 'staff:project_create' %}">+ New project</a>
+</div>
+
+<div class="toolbar">
+  <div class="filter-chips" role="group" aria-label="Filter by status">
+    {% for key, label, count in filters %}
+      <a class="filter-chip" href="?status={{ key }}{% if query %}&q={{ query|urlencode }}{% endif %}" {% if key == status %}aria-current="true"{% endif %}>{{ label }} <span>{{ count }}</span></a>
+    {% endfor %}
+  </div>
+  <form class="toolbar__search" method="get" role="search">
+    <input type="hidden" name="status" value="{{ status }}">
+    <label class="visually-hidden" for="q">Search projects</label>
+    <input class="input" id="q" type="search" name="q" value="{{ query }}" placeholder="Search projects or clients">
+  </form>
+</div>
+
+<div class="table-wrap">
+  <table class="table">
+    <thead><tr><th>Project</th><th>Client</th><th>Status</th><th>Targets</th><th>In progress</th><th>Questionnaire</th></tr></thead>
+    <tbody>
+      {% for row in rows %}{% with p=row.project %}
+        <tr>
+          <td><a class="strong" href="{% url 'staff:project' p.pk %}">{{ p.internal_name }}</a><div class="muted small">Shoppers see: {{ p.shopper_facing_name }}</div></td>
+          <td>{{ p.client }}</td>
+          <td><span class="tag {{ p.status|project_status_class }}">{{ p.get_status_display }}</span></td>
+          <td>{{ p.target_count }}</td>
+          <td>{{ p.open_count }}</td>
+          <td><span class="tag {% if row.questionnaire == 'Not started' %}tag--warn{% else %}tag--active{% endif %}">{{ row.questionnaire }}</span></td>
+        </tr>
+      {% endwith %}{% empty %}
+        <tr><td colspan="6" class="table__empty">{% if query %}No projects match “{{ query }}”.{% else %}No projects yet. <a href="{% url 'staff:project_create' %}">Create the first one</a>.{% endif %}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

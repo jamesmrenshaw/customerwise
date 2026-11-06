@@ -1,0 +1,19 @@
+{% extends "staff/dialogs/_base.html" %}
+{% block action_url %}{% url 'staff:target_add' project.pk %}{% endblock %}
+{% block hx_url %}{% url 'staff:target_add' project.pk %}{% endblock %}
+{% block cancel_url %}{% url 'staff:targets' project.pk %}{% endblock %}
+{% block title %}Add target{% endblock %}
+{% block body %}
+  {% include "staff/_field.html" with field=form.name %}
+  {% include "staff/_field.html" with field=form.website %}
+  {{ form.add_anyway }}
+  {% if form.duplicates %}
+    <div class="banner banner--warn" role="alert">
+      <strong>Possible duplicate.</strong>
+      {% for d in form.duplicates %}{{ d.name }}{% if d.website %} ({{ d.website }}){% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}
+      {% if form.duplicates|length == 1 %}is{% else %}are{% endif %} already a target on this project. Add it anyway only if it's a different organisation.
+    </div>
+  {% endif %}
+  <p class="muted small">You can assign a shopper after adding it.</p>
+{% endblock %}
+{% block action_label %}{% if form.duplicates %}Add anyway{% else %}Add target{% endif %}{% endblock %}

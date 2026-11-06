@@ -1,0 +1,52 @@
+{% extends "base.html" %}{% load staff_tags %}
+{% block title %}Targets · {{ project.internal_name }}{% endblock %}
+{% block content %}
+{% include "staff/_project_header.html" %}
+
+<div class="toolbar">
+  <div class="filter-chips" role="group" aria-label="Filter targets">
+    {% for key, label, count in filters %}
+      <a class="filter-chip" href="?show={{ key }}" {% if key == shown %}aria-current="true"{% endif %}>{{ label }} <span>{{ count }}</span></a>
+    {% endfor %}
+  </div>
+  {% url 'staff:target_add' project.pk as add_url %}
+  <a class="btn btn--primary" href="{{ add_url }}" hx-get="{{ add_url }}" hx-target="#modal">+ Add target</a>
+</div>
+
+<div class="table-wrap">
+  <table class="table">
+    <thead><tr><th>Target</th><th>Added by</th><th>Shopper</th><th>Stage</th><th><span class="visually-hidden">Actions</span></th></tr></thead>
+    <tbody>
+      {% for row in rows %}{% with t=row.target a=row.assignment latest=row.latest %}
+        <tr{% if t.archived_at %} class="is-muted"{% endif %}>
+          <td><strong>{{ t.name }}</strong><div class="muted small">{{ t.website|default:"No website" }}</div></td>
+          <td>{% if t.added_by_shopper %}<span class="tag tag--shopper">Shopper: {{ t.added_by|default:"—" }}</span>{% else %}{{ t.added_by|default:"—" }}{% endif %}</td>
+          <td>
+            {% if a %}{{ a.shopper }}<div class="muted small">{% if a.approval_confirmed_offplatform %}Approval confirmed {{ a.created_at|date:"j M" }}{% else %}Added by the shopper{% endif %}</div>
+            {% elif latest %}{{ latest.shopper }}
+            {% elif not t.archived_at %}<span class="tag tag--warn">Not assigned</span>{% endif %}
+          </td>
+          <td>{% if latest %}<span class="tag {{ latest|stage_class }}">{{ latest|stage_label }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+          <td class="table__actions">
+            {% if t.archived_at %}
+              <span class="muted small">Archived · history kept</span>
+            {% else %}
+              {% if not a and not latest %}
+                {% url 'staff:target_assign' t.pk as u %}<a class="btn btn--sm btn--primary" href="{{ u }}" hx-get="{{ u }}" hx-target="#modal">Assign shopper</a>
+              {% endif %}
+              {% if a %}
+                {% url 'staff:target_reassign' t.pk as u %}<a class="btn btn--sm" href="{{ u }}" hx-get="{{ u }}" hx-target="#modal">Reassign</a>
+                {% url 'staff:target_withdraw' t.pk as u %}<a class="btn btn--sm" href="{{ u }}" hx-get="{{ u }}" hx-target="#modal">Withdraw</a>
+              {% endif %}
+              {% url 'staff:target_archive' t.pk as u %}<a class="btn btn--sm" href="{{ u }}" hx-get="{{ u }}" hx-target="#modal">Archive</a>
+            {% endif %}
+          </td>
+        </tr>
+      {% endwith %}{% empty %}
+        <tr><td colspan="5" class="table__empty">No targets here yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="muted small">A target has at most one shopper at a time. Reassigning or withdrawing keeps the previous shopper's activity and draft for staff; that shopper loses access to the target.</p>
+{% endblock %}

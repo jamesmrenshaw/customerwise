@@ -1,0 +1,14 @@
+<dialog class="dialog" aria-labelledby="dialog-title" {% if standalone %}open{% endif %}>
+  <form class="dialog__body" method="post" action="{% block action_url %}{% endblock %}" hx-post="{% block hx_url %}{% endblock %}" hx-target="#modal">
+    {% csrf_token %}
+    <h2 id="dialog-title">{% block title %}{{ title }}{% endblock %}</h2>
+    {% if form.non_field_errors and not form.duplicates %}
+      <div class="banner banner--error" role="alert">{% for e in form.non_field_errors %}{{ e }} {% endfor %}</div>
+    {% endif %}
+    {% block body %}{% endblock %}
+    <div class="dialog__actions">
+      <a class="btn" href="{% block cancel_url %}{% endblock %}" data-close-dialog>Cancel</a>
+      {% block submit %}<button type="submit" class="btn {% block action_class %}btn--primary{% endblock %}">{% block action_label %}{{ action }}{% endblock %}</button>{% endblock %}
+    </div>
+  </form>
+</dialog>

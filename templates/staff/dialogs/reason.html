@@ -1,0 +1,10 @@
+{% extends "staff/dialogs/_base.html" %}
+{% block action_url %}{% if action == "Archive" %}{% url 'staff:target_archive' target.pk %}{% else %}{% url 'staff:target_withdraw' target.pk %}{% endif %}{% endblock %}
+{% block hx_url %}{% if action == "Archive" %}{% url 'staff:target_archive' target.pk %}{% else %}{% url 'staff:target_withdraw' target.pk %}{% endif %}{% endblock %}
+{% block cancel_url %}{% url 'staff:targets' target.project_id %}{% endblock %}
+{% block action_class %}btn--danger{% endblock %}
+{% block body %}
+  <p><strong>{{ target.name }}</strong>{% if current %}, currently assigned to {{ current.shopper }}.{% endif %}</p>
+  {% include "staff/_field.html" with field=form.note label="Reason (staff only)" %}
+  <p class="muted small">{{ explain }}</p>
+{% endblock %}

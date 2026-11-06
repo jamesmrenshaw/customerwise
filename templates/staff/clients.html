@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Clients · Customer Wise{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Clients</h1>
+    <p class="lead">Organisations that commission projects. Clients don't sign in during the pilot, and shoppers never see these names.</p>
+  </div>
+  {% url 'staff:client_add' as add_url %}
+  <a class="btn btn--primary" href="{{ add_url }}" hx-get="{{ add_url }}" hx-target="#modal">+ Add client</a>
+</div>
+<div class="table-wrap">
+  <table class="table">
+    <thead><tr><th>Client</th><th>Reference</th><th>Projects</th><th>Status</th><th><span class="visually-hidden">Actions</span></th></tr></thead>
+    <tbody>
+      {% for c in clients %}
+        <tr>
+          <td><strong>{{ c.name }}</strong></td>
+          <td>{{ c.reference|default:"—" }}</td>
+          <td>{{ c.project_count }}</td>
+          <td><span class="tag {% if c.is_active %}tag--active{% else %}tag--unable{% endif %}">{% if c.is_active %}Active{% else %}Inactive{% endif %}</span></td>
+          <td class="table__actions">
+            {% url 'staff:client_edit' c.pk as u %}<a class="btn btn--sm" href="{{ u }}" hx-get="{{ u }}" hx-target="#modal">Edit</a>
+            <form method="post" action="{% url 'staff:client_toggle' c.pk %}">{% csrf_token %}<button class="btn btn--sm">{% if c.is_active %}Deactivate{% else %}Reactivate{% endif %}</button></form>
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="5" class="table__empty">No clients yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="muted small">Clients can't be deleted, so their projects and reports are never lost. Deactivated clients can't be chosen for new projects.</p>
+{% endblock %}

@@ -12,10 +12,10 @@ from apps.core.access import assignments_for, targets_for
 from apps.fieldwork import services as fieldwork
 from apps.fieldwork.models import Assignment
 from apps.projects import services as projects
-from apps.projects.admin import ProjectForm
 from apps.projects.models import ClientOrganisation, Project, Target, domain_from_website
 from apps.questionnaires import services as questionnaires
 from apps.questionnaires.models import Question, QuestionnaireVersion, Section
+from apps.staff.forms import ProjectForm
 
 pytestmark = pytest.mark.django_db
 
@@ -104,26 +104,6 @@ def test_brief_changes_create_new_versions(project, staff, sam):
     assert project.brief_versions.count() == 2
 
 
-def test_project_admin_saves_brief_versions(client, staff, project):
-    client.force_login(staff)
-    url = reverse("admin:projects_project_change", args=[project.pk])
-    data = {
-        "client": project.client.pk,
-        "status": "active",
-        "internal_name": project.internal_name,
-        "client_facing_name": project.client_facing_name,
-        "shopper_facing_name": project.shopper_facing_name,
-        "brief": "First brief.",
-        "targets-TOTAL_FORMS": 0,
-        "targets-INITIAL_FORMS": 0,
-        "brief_versions-TOTAL_FORMS": 0,
-        "brief_versions-INITIAL_FORMS": 0,
-    }
-    assert client.post(url, data).status_code == 302
-    assert project.latest_brief.text == "First brief."
-    assert "First brief." in client.get(url).content.decode()
-
-
 # --- Targets ---------------------------------------------------------------------
 
 
@@ -147,17 +127,6 @@ def test_duplicate_targets_match_name_or_domain(project, target):
     target.archived_at = target.created_at
     target.save()
     assert not projects.find_duplicate_targets(project, "Global Relay").exists()
-
-
-def test_admin_warns_about_duplicate_targets(client, staff, project, target):
-    client.force_login(staff)
-    response = client.post(
-        reverse("admin:projects_target_add"),
-        {"project": project.pk, "name": "Global Relay Ltd", "website": "globalrelay.com"},
-        follow=True,
-    )
-    assert "Possible duplicate" in response.content.decode()
-    assert Target.objects.get(name="Global Relay Ltd").added_by == staff
 
 
 # --- Questionnaires --------------------------------------------------------------
@@ -208,42 +177,6 @@ def test_new_draft_copies_questions_with_the_same_keys(project):
     assert keys(v1) == keys(v2)
     with pytest.raises(ValidationError, match="already has a draft"):
         questionnaires.new_draft_from(v1)
-
-
-def test_published_questionnaires_are_read_only_in_admin(client, staff, project):
-    call_command("load_questionnaire", str(project.pk), "--publish")
-    version = questionnaires.current_version(project)
-    client.force_login(staff)
-    html = client.get(
-        reverse("admin:questionnaires_questionnaireversion_change", args=[version.pk])
-    ).content.decode()
-    assert 'name="sections-0-title"' not in html  # inline fields aren't editable
-    assert "Key facts" in html
-    section = version.sections.first()
-    section_html = client.get(
-        reverse("admin:questionnaires_section_change", args=[section.pk])
-    ).content.decode()
-    assert 'name="questions-0-prompt"' not in section_html
-    assert "Date and time of first enquiry" in section_html
-
-
-def test_draft_sections_have_editable_questions(client, staff, project):
-    call_command("load_questionnaire", str(project.pk))
-    section = QuestionnaireVersion.objects.get(project=project).sections.first()
-    client.force_login(staff)
-    html = client.get(reverse("admin:questionnaires_section_change", args=[section.pk])).content.decode()
-    assert 'name="questions-0-prompt"' in html
-
-
-def test_admin_publish_action_reports_problems(client, staff, project):
-    draft = QuestionnaireVersion.objects.create(project=project, number=1)
-    client.force_login(staff)
-    response = client.post(
-        reverse("admin:questionnaires_questionnaireversion_changelist"),
-        {"action": "publish", "_selected_action": [draft.pk]},
-        follow=True,
-    )
-    assert "Add at least one section" in response.content.decode()
 
 
 # --- Assignments -----------------------------------------------------------------
@@ -317,64 +250,7 @@ def test_shoppers_only_see_their_own_targets_on_a_shared_project(project, target
     assert list(targets_for(priya)) == [other]
 
 
-def test_admin_add_assignment_requires_approval_checkbox(client, staff, target, sam):
-    client.force_login(staff)
-    url = reverse("admin:fieldwork_assignment_add")
-    response = client.post(url, {"target": target.pk, "shopper": sam.pk})
-    assert response.status_code == 200 and not Assignment.objects.exists()
-    response = client.post(
-        url, {"target": target.pk, "shopper": sam.pk, "approval_confirmed_offplatform": "on"}
-    )
-    assert response.status_code == 302
-    assert Assignment.objects.get().assigned_by == staff
-
-
-def test_admin_add_assignment_rejects_a_second_open_assignment(client, staff, target, sam, priya):
-    fieldwork.assign(target, sam, approval_confirmed=True)
-    client.force_login(staff)
-    response = client.post(
-        reverse("admin:fieldwork_assignment_add"),
-        {"target": target.pk, "shopper": priya.pk, "approval_confirmed_offplatform": "on"},
-    )
-    assert response.status_code == 200
-    assert "already has an open assignment" in response.content.decode()
-
-
-def test_admin_reassign_page(client, staff, target, sam, priya):
-    assignment = fieldwork.assign(target, sam, approval_confirmed=True)
-    client.force_login(staff)
-    url = reverse("admin:fieldwork_assignment_reassign", args=[assignment.pk])
-    assert "Reassign target" in client.get(url).content.decode()
-    response = client.post(url, {"new_shopper": priya.pk, "approval_confirmed": "on"}, follow=True)
-    assert "Reassigned Global Relay to Priya Shah" in response.content.decode()
-    assert target.assignments.open().get().shopper == priya
-
-
-def test_assignments_and_targets_cannot_be_deleted_in_admin(client, staff, target, sam):
-    assignment = fieldwork.assign(target, sam, approval_confirmed=True)
-    client.force_login(staff)
-    assert client.get(reverse("admin:fieldwork_assignment_delete", args=[assignment.pk])).status_code == 403
-    assert client.get(reverse("admin:projects_target_delete", args=[target.pk])).status_code == 403
-
-
 # --- Admin pages and the invitation button (C) -------------------------------------
-
-
-@pytest.mark.parametrize(
-    "name",
-    [
-        "accounts_user",
-        "projects_clientorganisation",
-        "projects_project",
-        "projects_target",
-        "projects_briefversion",
-        "questionnaires_questionnaireversion",
-        "fieldwork_assignment",
-    ],
-)
-def test_admin_list_pages_load(client, staff, name):
-    client.force_login(staff)
-    assert client.get(reverse(f"admin:{name}_changelist")).status_code == 200
 
 
 def test_send_invitation_button_on_user_page(client, staff, sam):

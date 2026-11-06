@@ -1,0 +1,22 @@
+{% extends "staff/dialogs/_base.html" %}
+{% block action_url %}{% url 'staff:version_publish' version.pk %}{% endblock %}
+{% block hx_url %}{% url 'staff:version_publish' version.pk %}{% endblock %}
+{% block cancel_url %}{% url 'staff:questionnaire' version.project_id %}?v={{ version.number }}{% endblock %}
+{% block title %}Publish version {{ version.number }}{% endblock %}
+{% block body %}
+  {% if problems %}
+    <div class="banner banner--error" role="alert"><strong>Fix these first:</strong>
+      <ul>{% for p in problems %}<li>{{ p }}</li>{% endfor %}</ul></div>
+  {% else %}
+    <p>New reports will use version {{ version.number }}. Submitted reports keep the version they answered.</p>
+    {% if drafts %}
+      <fieldset class="stack"><legend class="strong">{{ drafts }} report{{ drafts|pluralize }} still being drafted on the previous version</legend>
+        {% for radio in form.move_drafts %}<label class="check-card">{{ radio.tag }} <span>{{ radio.choice_label }}</span></label>{% endfor %}
+      </fieldset>
+    {% else %}
+      <p class="muted small">No reports are being drafted yet, so nothing needs to move.</p>
+    {% endif %}
+  {% endif %}
+{% endblock %}
+{% block action_label %}Publish{% endblock %}
+{% block submit %}{% if not problems %}{{ block.super }}{% endif %}{% endblock %}

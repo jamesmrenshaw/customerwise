@@ -10,18 +10,29 @@
   <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
   <script src="{% static 'vendor/htmx.min.js' %}" defer></script>
+  <script src="{% static 'js/app.js' %}" defer></script>
 </head>
 <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+  <a class="skip-link" href="#main">Skip to content</a>
   <header class="site-header">
     <div class="site-header__inner">
       <a class="site-header__logo" href="{% url 'core:home' %}">
         <img src="{% static 'img/logo.webp' %}" alt="Customer Wise" width="168" height="32">
       </a>
+      {% if user.is_staff %}
+        {% url 'staff:projects' as projects_url %}{% url 'staff:clients' as clients_url %}
+        <nav class="main-nav" aria-label="Main">
+          <a href="{{ projects_url }}" {% if section == "projects" %}aria-current="page"{% endif %}>Projects</a>
+          <a href="{{ clients_url }}" {% if section == "clients" %}aria-current="page"{% endif %}>Clients</a>
+          <a href="{% url 'admin:accounts_user_changelist' %}">Users
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6"/><path d="M20 4 10 14"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>
+          </a>
+        </nav>
+      {% endif %}
       {% block nav %}{% endblock %}
       {% if user.is_authenticated %}
         <div class="site-header__user">
-          <span>{{ user }}{% if user.is_staff %} · Customer Wise{% else %} · Shopper{% endif %}</span>
-          {% if user.is_staff %}<a href="{% url 'admin:index' %}">Admin</a>{% endif %}
+          <span>{{ user }} <span class="muted">· {% if user.is_staff %}Customer Wise{% else %}Shopper{% endif %}</span></span>
           <form method="post" action="{% url 'accounts:logout' %}">
             {% csrf_token %}
             <button type="submit" class="btn btn--link">Sign out</button>
@@ -30,8 +41,14 @@
       {% endif %}
     </div>
   </header>
-  <main class="page" id="main">
+  <main class="page {% block page_class %}{% endblock %}" id="main">
+    {% if messages %}
+      {% for message in messages %}
+        <div class="banner banner--{{ message.tags }}" role="{% if message.level >= 40 %}alert{% else %}status{% endif %}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
     {% block content %}{% endblock %}
   </main>
+  <div id="modal"></div>
 </body>
 </html>

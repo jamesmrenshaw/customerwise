@@ -16,7 +16,7 @@ Fixed inputs:
   - contacts recorded by job title only; no audio files (D21)
 
 Decisions made 5–6 Nov 2026:
-- **Setup screens:** all setup is done in **Django admin**: users and invites, client organisations, shoppers, the project, its names, questionnaire, brief and shopper assignments.
+- **Setup screens:** only **user accounts and invitations** use Django admin. Everything else staff use (clients, projects and their names, the brief, the questionnaire builder, targets and shopper assignments) has custom screens in the prototype's design (screens 07–11), decided 6 Nov 2026.
 - **Front end:** **Django templates + HTMX**.
 - **File storage:** **Railway Buckets**.
 - **Malware scanning:** none. **File type and size checks only**, because the user is the only pilot shopper. This is a recorded pilot exception to D10/CW-084.
@@ -56,6 +56,7 @@ pyproject.toml  uv.lock  Dockerfile  railway.json  .github/workflows/ci.yml
 docs/ARCHITECTURE.md            ← this plan, committed
 config/settings/{base,dev,test,prod}.py  config/urls.py
 apps/
+  staff/         staff screens: projects, clients, targets and shoppers, questionnaire builder
   core/          base templates, design tokens CSS, HTMX helpers, access.py (query scoping), decorators
   accounts/      User, Invitation, LoginToken, login/magic-link views, allauth adapter, admin actions
   projects/      ClientOrganisation, Project, BriefVersion, BriefAcknowledgement, Target
@@ -105,7 +106,7 @@ Project 1─* QuestionnaireVersion 1─* Section 1─* Question      Project 1�
 - **ReviewComment:** links to a submission and optionally a question, with the author and the text.
 - **ReportNote:** notes from the shopper to Customer Wise. These never appear in exports.
 - **EvidenceFile:** belongs to an assignment and has `storage_key` (a random UUID path), `original_name`, `content_type`, `size`, `category`, `scan_status` (fixed to "not_scanned" for the pilot) and `deleted_at`. It keeps edit history.
-- **AuditEvent:** records the actor, action, object type and ID, project, JSON data and time. A **Postgres trigger blocks UPDATE and DELETE** on this table, and admin shows it read-only.
+- **AuditEvent:** records the actor, action, object type and ID, project, JSON data and time. A **Postgres trigger blocks UPDATE and DELETE** on this table, and staff can only read it.
 
 All models use UUID primary keys, so URLs never expose IDs that can be guessed in sequence.
 
@@ -130,7 +131,7 @@ All models use UUID primary keys, so URLs never expose IDs that can be guessed i
 
 **Questionnaire versions (D06).** Published versions are never edited. Moving open drafts to a new version copies answers by `Question.key`, leaves new questions blank, and keeps answers to removed questions in a history JSON on the report. Reports never depend on the pilot questions. A `load_questionnaire` command imports the D06 seed list from `apps/questionnaires/seed/pilot.json`.
 
-**Brief changes (D06).** Saving a brief in admin creates a new `BriefVersion`. The shopper sees a paragraph-level diff (`difflib`) of the latest version against the last one they acknowledged, and must acknowledge it before submitting. Staff see who has acknowledged in admin.
+**Brief changes (D06).** Saving a changed brief on the project's Details and brief screen creates a new `BriefVersion`. The shopper sees a paragraph-level diff (`difflib`) of the latest version against the last one they acknowledged, and must acknowledge it before submitting. Staff see who has acknowledged on the same screen.
 
 **Report rendering (D06, MVP-02).** `exports/render.py:build_report_document(submission)` produces a neutral structure: a title page, sections, and evidence included on request. Three renderers consume it, each supporting the four display styles: the on-screen review template, the WeasyPrint PDF template and the DOCX builder. Exports use the client-facing project name, never include the shopper's name or private notes, and record an audit event. Evidence is bundled into a ZIP that streams from the bucket.
 
@@ -178,11 +179,11 @@ All models use UUID primary keys, so URLs never expose IDs that can be guessed i
 
 1. **Foundation (CUS-123 CW-088, CUS-118 CW-083):** commit this plan as `docs/ARCHITECTURE.md`; scaffold the project, settings, Docker, CI and the Railway dev and production environments with a bucket; base layout with tokens and the logo; a health check.
 2. **Sign-in and roles (CUS-36, CUS-37, CUS-38, CUS-39):** the User model, invitations, magic links, Microsoft/Google through allauth, the staff and shopper decorators, `access.py`, the admin invite actions and `create_staff_user`.
-3. **Setup in admin (CUS-40, CUS-41, CUS-44, CUS-45, CUS-50, CUS-54, CUS-62):** the models and admin for organisations, projects (three names), briefs, questionnaire versions with publishing, and assignment, reassign and withdraw actions; the seed command.
+3. **Project setup (CUS-40, CUS-41, CUS-44, CUS-45, CUS-50, CUS-54, CUS-62):** the models and services for organisations, projects (three names), briefs, questionnaire versions with publishing, and assigning, reassigning and withdrawing; the staff screens in `apps/staff` (Projects, Clients, Targets and shoppers, Questionnaire builder, Details and brief); the pilot seed.
 4. **Shopper fieldwork (CUS-63, CUS-64, CUS-65, CUS-66, CUS-67, CUS-141):** the my-assignments and assignment detail screens, the stage stepper, unable to complete, the activity log, adding targets with the duplicate warning, and the brief with acknowledgement.
 5. **Report and evidence (CUS-70, CUS-71, CUS-72, CUS-73, CUS-74, CUS-75, CUS-76, CUS-78, CUS-79, CUS-84, CUS-119):** the section editor with autosave, Trix and sanitising; notes; uploading, validating and downloading evidence; submit validation and the snapshot; locking.
 6. **Staff monitoring and review (CUS-68, CUS-80, CUS-81, CUS-83):** the monitoring screen with filters and stalled flags, the review screen with per-question comments, and returning reports.
-7. **Export and audit (CUS-142, CUS-120):** the document builder with PDF, DOCX and ZIP; audit events with the protecting trigger; a read-only audit view in admin.
+7. **Export and audit (CUS-142, CUS-120):** the document builder with PDF, DOCX and ZIP; audit events with the protecting trigger; a read-only audit view for staff.
 
 Each step is its own branch named from Linear's `gitBranchName`, with a PR. The Linear story moves to In Progress and then Done, with a comment linking the PR.
 

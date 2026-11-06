@@ -1,0 +1,9 @@
+{% extends "staff/dialogs/_base.html" %}
+{% block action_url %}{% if client %}{% url 'staff:client_edit' client.pk %}{% else %}{% url 'staff:client_add' %}{% endif %}{% endblock %}
+{% block hx_url %}{% if client %}{% url 'staff:client_edit' client.pk %}{% else %}{% url 'staff:client_add' %}{% endif %}{% endblock %}
+{% block cancel_url %}{% url 'staff:clients' %}{% endblock %}
+{% block body %}
+  {% include "staff/_field.html" with field=form.name %}
+  {% include "staff/_field.html" with field=form.reference %}
+{% endblock %}
+{% block action_label %}Save client{% endblock %}

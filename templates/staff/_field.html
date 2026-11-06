@@ -1,0 +1,6 @@
+<div class="field{% if field.errors %} field--error{% endif %}">
+  <label for="{{ field.id_for_label }}">{{ label|default:field.label }}{% if not field.field.required and not hide_optional %} <span class="muted">(optional)</span>{% endif %}{% if badge %} <span class="tag {{ badge_class }}">{{ badge }}</span>{% endif %}</label>
+  {{ field }}
+  {% if help %}<p class="field__help">{{ help }}</p>{% elif field.help_text %}<p class="field__help">{{ field.help_text }}</p>{% endif %}
+  {% for error in field.errors %}<p class="field__error" role="alert">{{ error }}</p>{% endfor %}
+</div>

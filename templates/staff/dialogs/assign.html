@@ -1,0 +1,20 @@
+{% extends "staff/dialogs/_base.html" %}
+{% block action_url %}{% if current %}{% url 'staff:target_reassign' target.pk %}{% else %}{% url 'staff:target_assign' target.pk %}{% endif %}{% endblock %}
+{% block hx_url %}{% if current %}{% url 'staff:target_reassign' target.pk %}{% else %}{% url 'staff:target_assign' target.pk %}{% endif %}{% endblock %}
+{% block cancel_url %}{% url 'staff:targets' target.project_id %}{% endblock %}
+{% block body %}
+  <p><strong>{{ target.name }}</strong>{% if current %}, currently assigned to {{ current.shopper }}.{% endif %}</p>
+  {% include "staff/_field.html" with field=form.shopper %}
+  <div class="field{% if form.approval_confirmed.errors %} field--error{% endif %}">
+    <label class="check-card">
+      {{ form.approval_confirmed }}
+      <span><strong>The client has approved this shopper</strong><br><span class="muted small">Approval happens by email in the pilot. Tick to confirm you have it.</span></span>
+    </label>
+    {% for e in form.approval_confirmed.errors %}<p class="field__error" role="alert">{{ e }}</p>{% endfor %}
+  </div>
+  {% include "staff/_field.html" with field=form.approval_note %}
+  {% if current %}
+    {% include "staff/_field.html" with field=form.note label="Reason (staff only)" %}
+    <p class="muted small">The current assignment is closed. Its activity and draft stay visible to staff, and {{ current.shopper }} loses access. The new shopper starts fresh.</p>
+  {% endif %}
+{% endblock %}
