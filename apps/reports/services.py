@@ -157,6 +157,18 @@ def submit(report, user, *, comment="", replies=None):
     Assignment.objects.filter(pk=report.assignment_id).update(
         stage=Assignment.Stage.IN_REVIEW, returned=False, last_activity_at=now
     )
+    from apps.audit.services import record
+
+    record(
+        user,
+        "report.submitted",
+        report,
+        project=report.assignment.target.project,
+        target=report.assignment.target.name,
+        version=report.version_no,
+        with_comment=bool((comment or "").strip()),
+        replies=sum(1 for v in (replies or {}).values() if (v or "").strip()),
+    )
     return report
 
 

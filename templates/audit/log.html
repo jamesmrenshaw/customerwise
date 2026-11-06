@@ -1,0 +1,47 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}Audit log{% if project %} · {{ project.internal_name }}{% endif %} · Customer Wise{% endblock %}
+{% block content %}
+{% if project %}
+  {% include "staff/_project_header.html" %}
+{% else %}
+  <div class="page-head"><div>
+    <h1>Audit log</h1>
+    <p class="lead">A permanent record of important actions across Customer Wise. Entries can't be edited or deleted.</p>
+  </div></div>
+{% endif %}
+
+<div class="toolbar">
+  <div class="filter-chips" role="group" aria-label="Filter by type">
+    {% for key, label in groups %}
+      <a class="filter-chip" href="?type={{ key }}" {% if key == group %}aria-current="true"{% endif %}>{{ label }}</a>
+    {% endfor %}
+  </div>
+  <p class="muted small">{{ page.paginator.count }} entr{{ page.paginator.count|pluralize:"y,ies" }}</p>
+</div>
+
+<div class="table-wrap">
+  <table class="table audit-table">
+    <thead><tr><th>When</th><th>Who</th><th>What</th>{% if not project %}<th>Project</th>{% endif %}</tr></thead>
+    <tbody>
+      {% for row in rows %}{% with e=row.event %}
+        <tr>
+          <td class="nowrap">{{ e.at|stamp }}</td>
+          <td>{{ e.actor|default:"System" }}{% if e.actor and not e.actor.is_staff %} <span class="tag tag--shopper">Shopper</span>{% endif %}</td>
+          <td>{{ row.text }}</td>
+          {% if not project %}<td>{% if e.project %}<a href="{% url 'staff:project_audit' e.project_id %}">{{ e.project.internal_name }}</a>{% else %}<span class="muted">—</span>{% endif %}</td>{% endif %}
+        </tr>
+      {% endwith %}{% empty %}
+        <tr><td colspan="4" class="table__empty">Nothing recorded yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if page.has_other_pages %}
+  <nav class="row" aria-label="Pages">
+    {% if page.has_previous %}<a class="btn btn--sm" href="?type={{ group }}&page={{ page.previous_page_number }}">Newer</a>{% endif %}
+    <span class="muted small">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+    {% if page.has_next %}<a class="btn btn--sm" href="?type={{ group }}&page={{ page.next_page_number }}">Older</a>{% endif %}
+  </nav>
+{% endif %}
+{% endblock %}

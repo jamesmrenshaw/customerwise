@@ -3,4 +3,8 @@ def nav_section(request):
     match = getattr(request, "resolver_match", None)
     if not match or match.namespace != "staff":
         return {}
-    return {"section": "clients" if match.url_name.startswith("client") else "projects"}
+    if match.url_name.startswith("client"):
+        return {"section": "clients"}
+    if match.url_name == "audit":
+        return {"section": "audit"}
+    return {"section": "projects"}

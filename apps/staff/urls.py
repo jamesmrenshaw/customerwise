@@ -1,5 +1,7 @@
 from django.urls import path
 
+from apps.audit import views as audit_views
+
 from . import review_views, views
 
 app_name = "staff"
@@ -29,6 +31,8 @@ urlpatterns = [
     path("questionnaires/<uuid:pk>/publish/", views.version_publish, name="version_publish"),
     path("questionnaires/<uuid:pk>/sections/add/", views.section_add, name="section_add"),
     path("sections/<uuid:pk>/", views.section_save, name="section_save"),
+    path("projects/<uuid:pk>/audit/", audit_views.project_audit_log, name="project_audit"),
+    path("audit/", audit_views.audit_log, name="audit"),
     path("clients/", views.client_list, name="clients"),
     path("clients/add/", views.client_edit, name="client_add"),
     path("clients/<uuid:pk>/edit/", views.client_edit, name="client_edit"),

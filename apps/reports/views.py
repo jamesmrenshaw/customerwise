@@ -270,7 +270,7 @@ def evidence_category(request, pk):
 def evidence_delete(request, pk):
     evidence = _evidence(request, pk)
     try:
-        evidence_services.delete_evidence(evidence)
+        evidence_services.delete_evidence(evidence, by=request.user)
     except ValidationError as exc:
         messages.error(request, " ".join(exc.messages))
     else:

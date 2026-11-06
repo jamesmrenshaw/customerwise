@@ -1,12 +1,26 @@
-"""Assigning shoppers to targets (D07, CW-027). Staff do this in admin; these rules apply everywhere."""
+"""Assignments and fieldwork (D07, D08, CW-027 to CW-032). Key actions are recorded in the audit log."""
 
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 from apps.accounts.models import User
+from apps.audit.services import record
 
 from .models import Assignment
+
+
+def _audit(actor, action, assignment, **data):
+    target = assignment.target
+    record(
+        actor,
+        action,
+        assignment,
+        project=target.project,
+        target=target.name,
+        shopper=str(assignment.shopper),
+        **data,
+    )
 
 
 def _check_shopper(shopper):
@@ -15,7 +29,9 @@ def _check_shopper(shopper):
 
 
 @transaction.atomic
-def assign(target, shopper, *, by=None, approval_confirmed=False, approval_note="", by_shopper=False):
+def assign(
+    target, shopper, *, by=None, approval_confirmed=False, approval_note="", by_shopper=False, audit=True
+):
     """Open an assignment for a target. Staff must confirm the client approved the shopper off-platform
     (CUS-140); a shopper adding their own target is assigned automatically (MVP-01)."""
     _check_shopper(shopper)
@@ -25,7 +41,7 @@ def assign(target, shopper, *, by=None, approval_confirmed=False, approval_note=
         raise ValidationError("Confirm the client approved this shopper (off-platform) before assigning.")
     try:
         with transaction.atomic():
-            return Assignment.objects.create(
+            assignment = Assignment.objects.create(
                 target=target,
                 shopper=shopper,
                 assigned_by=by,
@@ -34,6 +50,11 @@ def assign(target, shopper, *, by=None, approval_confirmed=False, approval_note=
             )
     except IntegrityError as exc:
         raise ValidationError(f"{target} already has an open assignment. Reassign it instead.") from exc
+    if audit:
+        _audit(
+            by, "assignment.created", assignment, approval_confirmed=approval_confirmed, by_shopper=by_shopper
+        )
+    return assignment
 
 
 def _close(assignment, reason, note=""):
@@ -55,33 +76,38 @@ def reassign(assignment, new_shopper, *, by=None, approval_confirmed=False, appr
     if not approval_confirmed:
         raise ValidationError("Confirm the client approved the new shopper (off-platform).")
     _close(assignment, Assignment.ClosedReason.REASSIGNED, note)
-    return assign(
+    new = assign(
         assignment.target,
         new_shopper,
         by=by,
         approval_confirmed=approval_confirmed,
         approval_note=approval_note,
+        audit=False,
     )
+    _audit(by, "assignment.reassigned", new, previous_shopper=str(assignment.shopper), note=note)
+    return new
 
 
 @transaction.atomic
-def withdraw(assignment, *, note=""):
+def withdraw(assignment, *, note="", by=None):
     """Staff withdraw a shopper from a target. History is kept; the shopper loses access."""
     assignment = Assignment.objects.select_for_update().get(pk=assignment.pk)
     if not assignment.is_open:
         raise ValidationError("Only an open assignment can be withdrawn.")
     _close(assignment, Assignment.ClosedReason.WITHDRAWN, note)
+    _audit(by, "assignment.withdrawn", assignment, note=note)
     return assignment
 
 
 @transaction.atomic
-def archive_target(target, *, note=""):
+def archive_target(target, *, note="", by=None):
     """Hide a target from lists. Any open assignment is withdrawn first; nothing is deleted (MVP-01)."""
     for assignment in target.assignments.open():
-        withdraw(assignment, note=note or "Target archived")
+        withdraw(assignment, note=note or "Target archived", by=by)
     if target.archived_at is None:
         target.archived_at = timezone.now()
         target.save(update_fields=["archived_at", "updated_at"])
+        record(by, "target.archived", target, project=target.project, target=target.name, note=note)
     return target
 
 
@@ -117,11 +143,19 @@ def _touch(assignment):
 
 
 @transaction.atomic
-def set_stage(assignment, stage):
+def set_stage(assignment, stage, *, by=None):
     _require_editable(assignment)
     if stage not in MANUAL_STAGES:
         raise ValidationError(
             "In review and Complete are set by submitting the report and by Customer Wise accepting it."
+        )
+    previous = assignment.get_stage_display()
+    if stage != assignment.stage:
+        _audit(
+            by or assignment.shopper,
+            "assignment.stage_changed",
+            assignment,
+            **{"from": previous, "to": Assignment.Stage(stage).label},
         )
     assignment.stage = stage
     assignment.last_activity_at = timezone.now()
@@ -130,7 +164,7 @@ def set_stage(assignment, stage):
 
 
 @transaction.atomic
-def mark_unable(assignment, reason, note=""):
+def mark_unable(assignment, reason, note="", *, by=None):
     """Close the assignment without a report (D08). The shopper still sees it, read-only."""
     _require_editable(assignment)
     if reason not in Assignment.UnableReason.values:
@@ -139,6 +173,13 @@ def mark_unable(assignment, reason, note=""):
     assignment.unable_note = note
     assignment.save(update_fields=["unable_reason", "unable_note", "updated_at"])
     _close(assignment, Assignment.ClosedReason.UNABLE, note)
+    _audit(
+        by or assignment.shopper,
+        "assignment.unable",
+        assignment,
+        reason=assignment.get_unable_reason_display(),
+        note=note,
+    )
     return assignment
 
 
@@ -204,4 +245,5 @@ def add_target_by_shopper(project, shopper, name, website=""):
     target = Target.objects.create(
         project=project, name=name, website=website, added_by=shopper, added_by_shopper=True
     )
+    record(shopper, "target.added", target, project=project, target=name, by_shopper=True)
     return assign(target, shopper, by=shopper, by_shopper=True)

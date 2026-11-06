@@ -151,7 +151,7 @@ def _detail_url(assignment):
 def assignment_stage(request, pk):
     assignment = _assignment(request, pk)
     try:
-        fieldwork.set_stage(assignment, request.POST.get("stage", ""))
+        fieldwork.set_stage(assignment, request.POST.get("stage", ""), by=request.user)
     except ValidationError as exc:
         messages.error(request, " ".join(exc.messages))
         return done(request, _detail_url(assignment))
@@ -164,7 +164,9 @@ def assignment_unable(request, pk):
     form = forms.UnableForm(posted(request))
     if request.method == "POST" and form.is_valid():
         try:
-            fieldwork.mark_unable(assignment, form.cleaned_data["reason"], form.cleaned_data["note"])
+            fieldwork.mark_unable(
+                assignment, form.cleaned_data["reason"], form.cleaned_data["note"], by=request.user
+            )
         except ValidationError as exc:
             form.add_error(None, exc)
         else:

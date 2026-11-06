@@ -12,5 +12,6 @@
   <a href="{% url 'staff:targets' project.pk %}" {% if tab == "targets" %}aria-current="page"{% endif %}>Targets and shoppers</a>
   <a href="{% url 'staff:questionnaire' project.pk %}" {% if tab == "questionnaire" %}aria-current="page"{% endif %}>Questionnaire</a>
   <a href="{% url 'staff:project_details' project.pk %}" {% if tab == "details" %}aria-current="page"{% endif %}>Details and brief</a>
+  <a href="{% url 'staff:project_audit' project.pk %}" {% if tab == "audit" %}aria-current="page"{% endif %}>Audit log</a>
 </nav>
 {% endif %}

@@ -16,7 +16,11 @@ def update_brief(project, text, user=None):
     if not text or (latest and latest.text == text):
         return None
     number = (project.brief_versions.aggregate(n=Max("number"))["n"] or 0) + 1
-    return BriefVersion.objects.create(project=project, number=number, text=text, created_by=user)
+    version = BriefVersion.objects.create(project=project, number=number, text=text, created_by=user)
+    from apps.audit.services import record
+
+    record(user, "brief.saved", version, project=project, version=number)
+    return version
 
 
 def has_acknowledged_latest_brief(user, project):

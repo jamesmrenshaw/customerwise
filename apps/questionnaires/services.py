@@ -56,21 +56,43 @@ def publish(version, user=None, move_drafts=False):
     version.published_at = timezone.now()
     version.published_by = user
     version.save(update_fields=["status", "published_at", "published_by", "updated_at"])
+    moved = 0
     if move_drafts:
         from apps.reports.services import move_to_version, open_drafts
 
         for report in open_drafts(version):
             move_to_version(report, version)
+            moved += 1
+    from apps.audit.services import record
+
+    record(
+        user,
+        "questionnaire.published",
+        version,
+        project=version.project,
+        version=version.number,
+        moved_drafts=moved,
+    )
     return version
 
 
 @transaction.atomic
-def new_draft_from(version):
+def new_draft_from(version, *, by=None):
     """Copy a version's sections and questions (same keys) into a new draft."""
     project = version.project
     if project.questionnaire_versions.filter(status=QuestionnaireVersion.Status.DRAFT).exists():
         raise ValidationError("This project already has a draft questionnaire. Edit or publish that one.")
     draft = QuestionnaireVersion.objects.create(project=project, number=_next_number(project))
+    from apps.audit.services import record
+
+    record(
+        by,
+        "questionnaire.draft_started",
+        draft,
+        project=project,
+        version=draft.number,
+        copied_from=version.number,
+    )
     for section in version.sections.prefetch_related("questions"):
         new_section = Section.objects.create(
             version=draft, order=section.order, title=section.title, display_style=section.display_style

@@ -95,6 +95,23 @@ class UserAdmin(admin.ModelAdmin):
         self._invite(request, [user])
         return redirect(reverse("admin:accounts_user_change", args=[user.pk]))
 
+    def save_model(self, request, obj, form, change):
+        from apps.audit.services import record
+
+        super().save_model(request, obj, form, change)
+        if not change:
+            record(request.user, "user.created", obj, email=obj.email, role=obj.get_role_display())
+        else:
+            changed = [f for f in ("role", "is_active") if f in form.changed_data]
+            if changed:
+                record(
+                    request.user,
+                    "user.updated",
+                    obj,
+                    email=obj.email,
+                    changes={f: str(form.cleaned_data[f]) for f in changed},
+                )
+
     def get_readonly_fields(self, request, obj=None):
         # Only staff can grant the staff role (D03). The field stays editable for staff, and
         # shoppers can never reach admin. Don't let staff lock themselves out.

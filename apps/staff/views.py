@@ -12,6 +12,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from apps.audit.services import record
 from apps.core.access import staff_required
 from apps.core.ui import dialog, done, posted
 from apps.fieldwork import services as fieldwork
@@ -72,13 +73,28 @@ def project_list(request):
     )
 
 
+AUDITED_PROJECT_FIELDS = ["client", "status", "internal_name", "client_facing_name", "shopper_facing_name"]
+
+
 def _save_project(request, form, was_complete=False):
+    is_new = form.instance.pk is None or form.instance._state.adding
+    changed = [f for f in form.changed_data if f in AUDITED_PROJECT_FIELDS]
     project = form.save(commit=False)
     if project.status == Project.Status.COMPLETE and not was_complete and not project.ended_at:
         project.ended_at = timezone.now()
     elif project.status != Project.Status.COMPLETE:
         project.ended_at = None
     project.save()
+    if is_new:
+        record(request.user, "project.created", project, project=project, name=project.internal_name)
+    elif changed:
+        record(
+            request.user,
+            "project.updated",
+            project,
+            project=project,
+            changes={f: str(form.cleaned_data[f]) for f in changed},
+        )
     version = projects.update_brief(project, form.cleaned_data.get("brief"), request.user)
     if version and version.number > 1:
         return (
@@ -189,6 +205,7 @@ def target_add(request, pk):
         target.project = project
         target.added_by = request.user
         target.save()
+        record(request.user, "target.added", target, project=project, target=target.name)
         return done(
             request,
             reverse("staff:targets", args=[project.pk]),
@@ -275,7 +292,7 @@ def target_withdraw(request, pk):
         return redirect(_targets_url(target))
     form = forms.ReasonForm(posted(request))
     if request.method == "POST" and form.is_valid():
-        fieldwork.withdraw(current, note=form.cleaned_data["note"])
+        fieldwork.withdraw(current, note=form.cleaned_data["note"], by=request.user)
         return done(
             request,
             _targets_url(target),
@@ -304,7 +321,7 @@ def target_archive(request, pk):
     current = target.assignments.open().select_related("shopper").first()
     form = forms.ReasonForm(posted(request))
     if request.method == "POST" and form.is_valid():
-        fieldwork.archive_target(target, note=form.cleaned_data["note"])
+        fieldwork.archive_target(target, note=form.cleaned_data["note"], by=request.user)
         return done(request, _targets_url(target), f"{target.name} archived. Its history is kept.")
     explain = "The target is hidden from lists but its history is kept. It can't be deleted."
     if current:
@@ -374,12 +391,16 @@ def questionnaire_start(request, pk):
         from apps.questionnaires.management.commands.load_questionnaire import PILOT
 
         version = questionnaires.create_draft_from_data(project, questionnaires.load_json(PILOT))
+        record(
+            request.user, "questionnaire.draft_started", version, project=project, version=1, template="pilot"
+        )
         return done(
             request,
             _builder_url(version),
             "Draft version 1 created from the pilot questionnaire. Check it, then publish.",
         )
     version = QuestionnaireVersion.objects.create(project=project, number=1)
+    record(request.user, "questionnaire.draft_started", version, project=project, version=1, template="blank")
     section = questionnaires.add_section(version, title="New section")
     return done(request, _builder_url(version, section), "Draft version 1 started.")
 
@@ -389,7 +410,7 @@ def questionnaire_start(request, pk):
 def version_new_draft(request, pk):
     version = get_object_or_404(QuestionnaireVersion, pk=pk)
     try:
-        draft = questionnaires.new_draft_from(version)
+        draft = questionnaires.new_draft_from(version, by=request.user)
     except ValidationError as exc:
         messages.error(request, " ".join(exc.messages))
         return redirect(_builder_url(version))
@@ -501,7 +522,17 @@ def client_edit(request, pk=None):
     client = get_object_or_404(ClientOrganisation, pk=pk) if pk else None
     form = forms.ClientForm(posted(request), instance=client)
     if request.method == "POST" and form.is_valid():
+        is_new = client is None
+        changed = list(form.changed_data)
         client = form.save()
+        if is_new or changed:
+            record(
+                request.user,
+                "client.created" if is_new else "client.updated",
+                client,
+                name=client.name,
+                changes={f: str(form.cleaned_data[f]) for f in changed} if not is_new else {},
+            )
         return done(request, reverse("staff:clients"), f"{client.name} saved.")
     return dialog(
         request,
@@ -516,5 +547,11 @@ def client_toggle(request, pk):
     client = get_object_or_404(ClientOrganisation, pk=pk)
     client.is_active = not client.is_active
     client.save(update_fields=["is_active", "updated_at"])
+    record(
+        request.user,
+        "client.reactivated" if client.is_active else "client.deactivated",
+        client,
+        name=client.name,
+    )
     state = "reactivated" if client.is_active else "deactivated"
     return done(request, reverse("staff:clients"), f"{client.name} {state}.")

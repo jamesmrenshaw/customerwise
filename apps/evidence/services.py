@@ -8,6 +8,21 @@ from .models import EvidenceFile
 from .validation import validate_upload
 
 
+def _record(actor, action, evidence):
+    from apps.audit.services import record
+
+    target = evidence.assignment.target
+    record(
+        actor,
+        action,
+        evidence,
+        project=target.project,
+        target=target.name,
+        file=evidence.original_name,
+        category=evidence.get_category_display(),
+    )
+
+
 def _require_editable(assignment):
     if not shopper_can_edit(assignment):
         raise ValidationError("Evidence can't be changed after the report is submitted.")
@@ -27,6 +42,7 @@ def add_evidence(assignment, upload, *, by, category=None):
     )
     evidence.file.save(upload.name, upload, save=False)
     evidence.save()
+    _record(by, "evidence.uploaded", evidence)
     return evidence
 
 
@@ -38,8 +54,9 @@ def set_category(evidence, category):
     evidence.save()
 
 
-def delete_evidence(evidence):
+def delete_evidence(evidence, *, by=None):
     """Hidden from the shopper; the file and its history are kept for staff (D10)."""
     _require_editable(evidence.assignment)
     evidence.deleted_at = timezone.now()
     evidence.save()
+    _record(by or evidence.uploaded_by, "evidence.deleted", evidence)

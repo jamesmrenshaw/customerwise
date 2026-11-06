@@ -9,6 +9,15 @@ from apps.fieldwork.models import Assignment
 from .models import Report, ReviewComment
 
 
+def _record(actor, action, report, **data):
+    from apps.audit.services import record
+
+    target = report.assignment.target
+    record(
+        actor, action, report, project=target.project, target=target.name, version=report.version_no, **data
+    )
+
+
 def latest_submission(report):
     return report.submissions.order_by("-number").first()
 
@@ -91,6 +100,7 @@ def return_report(report, *, by, message=""):
     Assignment.objects.filter(pk=report.assignment_id).update(
         stage=Assignment.Stage.REPORT_DRAFTING, returned=True, last_activity_at=now
     )
+    _record(by, "report.returned", report, comments=len(drafts))
     return report
 
 
@@ -111,4 +121,5 @@ def accept_report(report, *, by):
     Assignment.objects.filter(pk=report.assignment_id).update(
         stage=Assignment.Stage.COMPLETE, last_activity_at=report.accepted_at
     )
+    _record(by, "report.accepted", report)
     return report

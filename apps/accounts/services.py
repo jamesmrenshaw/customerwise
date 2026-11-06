@@ -88,6 +88,9 @@ def send_invitation(user, sent_by=None):
         "accounts/email/invitation.txt",
         {"link": link, "expires_at": invitation.expires_at},
     )
+    from apps.audit.services import record
+
+    record(sent_by, "user.invited", user, email=user.email, role=user.get_role_display())
     return invitation
 
 

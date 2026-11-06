@@ -25,6 +25,7 @@
         <nav class="main-nav" aria-label="Main">
           <a href="{{ projects_url }}" {% if section == "projects" %}aria-current="page"{% endif %}>Projects</a>
           <a href="{{ clients_url }}" {% if section == "clients" %}aria-current="page"{% endif %}>Clients</a>
+          <a href="{% url 'staff:audit' %}" {% if section == "audit" %}aria-current="page"{% endif %}>Audit log</a>
           <a href="{% url 'admin:accounts_user_changelist' %}">Users
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6"/><path d="M20 4 10 14"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>
           </a>

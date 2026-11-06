@@ -113,6 +113,7 @@ def export_report(report, *, user, fmt, evidence_ids=()):
         "report.exported",
         report,
         project=report.assignment.target.project,
+        target=report.assignment.target.name,
         format=fmt,
         version=submission.number,
         evidence=[str(e.pk) for e in evidence],
