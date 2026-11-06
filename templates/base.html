@@ -1,0 +1,32 @@
+{% load static %}<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Customer Wise{% endblock %}</title>
+  {# Inline styles are blocked by the CSP, so HTMX must not inject its indicator styles. #}
+  <meta name="htmx-config" content='{"includeIndicatorStyles": false, "allowEval": false}'>
+  <link rel="preload" href="{% static 'fonts/nunito-sans-latin-wght-normal.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <script src="{% static 'vendor/htmx.min.js' %}" defer></script>
+</head>
+<body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+  <header class="site-header">
+    <div class="site-header__inner">
+      <a class="site-header__logo" href="{% url 'core:home' %}">
+        <img src="{% static 'img/logo.webp' %}" alt="Customer Wise" width="168" height="32">
+      </a>
+      {% block nav %}{% endblock %}
+      {% if user.is_authenticated %}
+        <div class="site-header__user">
+          <span>{{ user }}{% if user.is_staff %} · Customer Wise{% else %} · Shopper{% endif %}</span>
+        </div>
+      {% endif %}
+    </div>
+  </header>
+  <main class="page" id="main">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

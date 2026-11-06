@@ -1,0 +1,38 @@
+[project]
+name = "customerwise"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = [
+    "django>=6,<7",
+    "django-anymail[brevo]>=15.2",
+    "django-environ>=0.14.0",
+    "django-storages[s3]>=1.14.6",
+    "gunicorn>=26.2.0",
+    "psycopg[binary]>=3.3.8",
+    "whitenoise>=6.12.0",
+]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.test"
+testpaths = ["tests"]
+addopts = "--strict-markers"
+
+[tool.ruff]
+line-length = 110
+target-version = "py313"
+extend-exclude = ["**/migrations/*"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "DJ", "S", "SIM"]
+ignore = ["S101"]  # assert is fine in tests
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S"]
+
+[dependency-groups]
+dev = [
+    "factory-boy>=3.3.3",
+    "pytest>=9.2.0",
+    "pytest-django>=4.14.0",
+    "ruff>=0.17.4",
+]

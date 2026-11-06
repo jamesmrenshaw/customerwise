@@ -1,0 +1,41 @@
+/* Customer Wise design tokens, taken from the approved prototype (CW-083).
+   Brand colours come from the logo: #3DC1CB (light) and #029BA9 (primary). */
+
+@font-face {
+  font-family: "Nunito Sans";
+  src: url("../fonts/nunito-sans-latin-wght-normal.woff2") format("woff2");
+  font-weight: 200 1000;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* Brand */
+  --cw-blue: #029ba9;          /* primary buttons, selected states (white text) */
+  --cw-blue-hover: #02838f;
+  --cw-blue-light: #3dc1cb;    /* tags (dark text), focus rings, header rule */
+  --cw-blue-tint: #e0f5f6;     /* active nav, success banners */
+  --cw-link: #007480;          /* text links: 5.5:1 on white */
+  --cw-link-hover: #005a63;
+  --cw-on-light: #10282b;      /* text on --cw-blue-light */
+
+  /* Neutrals */
+  --ink: #16191d;
+  --muted: #505862;
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --border: #dde1e6;
+  --border-strong: #8c96a1;
+  --divider: #ebeef1;
+
+  /* Status */
+  --status-none-bg: #eef0f2;    --status-none-fg: #3d444c;
+  --status-active-bg: #e5eefb;  --status-active-fg: #1a4a8f;
+  --status-warn-bg: #fde9d7;    --status-warn-fg: #8a3600;  --status-warn-border: #f0b98a;
+  --status-error: #a3260f;
+  --status-shopper-bg: #efe9fa; --status-shopper-fg: #4b2e83;
+
+  --radius: 8px;
+  --radius-lg: 12px;
+  --font: "Nunito Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
