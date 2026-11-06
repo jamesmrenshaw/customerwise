@@ -72,8 +72,24 @@
   <aside class="layout-split__side stack-lg">
     <section class="card" aria-labelledby="rep-h">
       <h2 id="rep-h">Report</h2>
-      <p class="muted small">Report drafting opens in the next release. Keep logging your fieldwork here in the meantime.</p>
-      <button class="btn btn--block" disabled>Edit report</button>
+      {% with r=report_summary.report %}
+      {% if r %}
+        <span class="tag {% if r.status == 'returned' %}tag--warn{% elif r.status == 'submitted' %}tag--done{% else %}tag--active{% endif %}">{{ r.get_status_display }}</span>
+        <dl class="facts small">
+          <dt>Answered</dt><dd>{{ report_summary.answered }} of {{ report_summary.total }} questions</dd>
+          <dt>Evidence</dt><dd>{{ evidence_count }} file{{ evidence_count|pluralize }}</dd>
+          {% if r.submitted_at %}<dt>Submitted</dt><dd>{{ r.submitted_at|date:"j M" }} (version {{ r.version_no }})</dd>{% endif %}
+        </dl>
+        <a class="btn btn--primary btn--block" href="{% url 'reports:report' assignment.pk %}">{% if editable and r.is_editable %}Continue report{% else %}View report{% endif %}</a>
+      {% elif has_questionnaire and editable %}
+        <p class="muted small">Start the report whenever you're ready; you can save and come back.</p>
+        <a class="btn btn--primary btn--block" href="{% url 'reports:report' assignment.pk %}">Start report</a>
+      {% elif not has_questionnaire %}
+        <p class="muted small">Customer Wise hasn't published the questionnaire yet. Keep logging your fieldwork in the meantime.</p>
+      {% else %}
+        <p class="muted small">No report.</p>
+      {% endif %}
+      {% endwith %}
     </section>
 
     <section class="card" aria-labelledby="brief-h" id="brief">

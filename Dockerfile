@@ -30,4 +30,4 @@ EXPOSE 8000
 # deploy settings for these services (6 Nov 2026), and with one replica per environment this is
 # safe and a no-op when up to date. If migrate fails, the container exits and the deploy fails.
 # exec makes gunicorn PID 1 so it receives SIGTERM from Railway and shuts down gracefully.
-CMD ["sh", "-c", "python manage.py migrate --noinput && exec gunicorn config.wsgi --bind 0.0.0.0:${PORT:-8000} --workers ${WEB_CONCURRENCY:-2} --access-logfile - --forwarded-allow-ips='*'"]
+CMD ["sh", "-c", "python manage.py migrate --noinput && exec gunicorn config.wsgi --bind 0.0.0.0:${PORT:-8000} --workers ${WEB_CONCURRENCY:-2} --timeout 120 --access-logfile - --forwarded-allow-ips='*'"]

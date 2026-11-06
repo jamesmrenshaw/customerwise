@@ -61,3 +61,20 @@ def targets_for(user):
     if user.is_staff:
         return Target.objects.all()
     return Target.objects.filter(pk__in=assignments_for(user).values("target")).distinct()
+
+
+def reports_for(user):
+    """Reports on assignments the user may see (same rules as assignments_for)."""
+    from apps.reports.models import Report
+
+    return Report.objects.filter(assignment__in=assignments_for(user)).select_related(
+        "assignment__target__project", "questionnaire_version"
+    )
+
+
+def evidence_for(user):
+    """Evidence files the user may see. Deleted files are hidden from shoppers but kept for staff."""
+    from apps.evidence.models import EvidenceFile
+
+    qs = EvidenceFile.objects.filter(assignment__in=assignments_for(user))
+    return qs if user.is_staff else qs.current()

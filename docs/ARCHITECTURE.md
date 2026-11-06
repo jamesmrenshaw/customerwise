@@ -30,7 +30,7 @@ Decisions made 5–6 Nov 2026:
   - **Postgres**
   - **Bucket:** private storage for evidence and exports.
 - **Expected cost:** about $5–10 a month.
-- **Static files:** served by WhiteNoise. HTMX and Trix are vendored into `static/`, so there is no CDN and no Node build.
+- **Static files:** served by WhiteNoise. HTMX and the Nunito Sans font are vendored into `static/`, so there is no CDN and no Node build.
 - **Python and Django:** Python 3.13 and the current stable Django 6.x. Django 6 brings built-in CSP and template partials, which suit HTMX fragments.
 
 ### Key libraries
@@ -41,8 +41,7 @@ Decisions made 5–6 Nov 2026:
 | Email | `django-anymail` with Brevo |
 | S3 storage | `django-storages[s3]` (presigned URLs, 5 minutes) |
 | Edit history (soft delete, visible to staff) | `django-simple-history` |
-| Sanitising rich text | `nh3`, allowing only p, br, ul, ol, li, strong and b |
-| Rich-text editor | Trix, with the toolbar cut down to bold and bullets |
+| Answer formatting | a plain text box with a small toolbar: `**bold**`, `- ` bullets and blank-line paragraphs (`apps/reports/formatting.py`). The text is HTML-escaped before markup is added, so no sanitiser is needed. Trix was dropped because it injects inline `<style>`, which the strict CSP blocks (6 Nov 2026). |
 | PDF export | WeasyPrint (Pango installed in the Docker image) |
 | Word export | `python-docx`, plus a small converter for the HTML subset above |
 | File type sniffing | `filetype`, plus zip/OLE checks for Office files and emails |
@@ -181,7 +180,7 @@ All models use UUID primary keys, so URLs never expose IDs that can be guessed i
 2. **Sign-in and roles (CUS-36, CUS-37, CUS-38, CUS-39):** the User model, invitations, magic links, Microsoft/Google through allauth, the staff and shopper decorators, `access.py`, the admin invite actions and `create_staff_user`.
 3. **Project setup (CUS-40, CUS-41, CUS-44, CUS-45, CUS-50, CUS-54, CUS-62):** the models and services for organisations, projects (three names), briefs, questionnaire versions with publishing, and assigning, reassigning and withdrawing; the staff screens in `apps/staff` (Projects, Clients, Targets and shoppers, Questionnaire builder, Details and brief); the pilot seed.
 4. **Shopper fieldwork (CUS-63, CUS-64, CUS-65, CUS-66, CUS-67, CUS-141):** the my-assignments and assignment detail screens, the stage stepper, unable to complete, the activity log, adding targets with the duplicate warning, and the brief with acknowledgement.
-5. **Report and evidence (CUS-70, CUS-71, CUS-72, CUS-73, CUS-74, CUS-75, CUS-76, CUS-78, CUS-79, CUS-84, CUS-119):** the section editor with autosave, Trix and sanitising; notes; uploading, validating and downloading evidence; submit validation and the snapshot; locking.
+5. **Report and evidence (CUS-70, CUS-71, CUS-72, CUS-73, CUS-74, CUS-75, CUS-76, CUS-78, CUS-79, CUS-84, CUS-119):** the section editor with autosave and simple formatting; notes; uploading, validating and downloading evidence; submit validation and the snapshot; locking.
 6. **Staff monitoring and review (CUS-68, CUS-80, CUS-81, CUS-83):** the monitoring screen with filters and stalled flags, the review screen with per-question comments, and returning reports.
 7. **Export and audit (CUS-142, CUS-120):** the document builder with PDF, DOCX and ZIP; audit events with the protecting trigger; a read-only audit view for staff.
 

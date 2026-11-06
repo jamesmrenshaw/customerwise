@@ -1,0 +1,37 @@
+<section class="card" aria-labelledby="ev-h">
+  <h2 id="ev-h">Evidence</h2>
+  <p class="muted small">Upload what supports your answers: emails, screenshots, documents and call transcripts.</p>
+  {% if editable %}
+    <form class="upload" method="post" action="{% url 'reports:evidence_upload' report.pk %}" enctype="multipart/form-data">
+      {% csrf_token %}
+      <label class="upload__drop" for="files">
+        <strong>Choose files to upload</strong>
+        <span class="muted small">PDF, PNG, JPG, .docx, .xlsx, .eml, .msg, .srt, .vtt, .txt · up to 25 MB each · no audio</span>
+        <input id="files" name="files" type="file" multiple accept="{{ accept }}">
+      </label>
+      <div class="form-actions"><button class="btn btn--primary" type="submit">Upload</button></div>
+    </form>
+    <p class="banner banner--info small">Before uploading a transcript, remove the names of the people you spoke to. Audio recordings must not be uploaded.</p>
+  {% endif %}
+  <ul class="evidence-list">
+    {% for e in evidence %}
+      <li class="evidence">
+        <div class="evidence__name"><a href="{% url 'reports:evidence_download' e.pk %}">{{ e.original_name }}</a>
+          <div class="muted small">{{ e.get_category_display }} · {{ e.size|filesizeformat }} · uploaded {{ e.created_at|date:"j M" }}</div></div>
+        {% if editable %}
+          <form method="post" action="{% url 'reports:evidence_category' e.pk %}" class="row">
+            {% csrf_token %}
+            <label class="visually-hidden" for="cat-{{ e.pk }}">Category for {{ e.original_name }}</label>
+            <select class="input input--auto" id="cat-{{ e.pk }}" name="category">
+              {% for value, label in categories %}<option value="{{ value }}" {% if value == e.category %}selected{% endif %}>{{ label }}</option>{% endfor %}
+            </select>
+            <button class="btn btn--sm">Set</button>
+          </form>
+          <form method="post" action="{% url 'reports:evidence_delete' e.pk %}">{% csrf_token %}<button class="btn btn--link">Delete</button></form>
+        {% endif %}
+      </li>
+    {% empty %}
+      <li class="muted">No evidence uploaded yet.</li>
+    {% endfor %}
+  </ul>
+</section>

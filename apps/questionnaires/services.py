@@ -41,10 +41,10 @@ def validate_for_publishing(version):
 
 
 @transaction.atomic
-def publish(version, user=None):
+def publish(version, user=None, move_drafts=False):
     """Publish a draft. Earlier published versions stay, for the reports that answered them.
 
-    When reports exist (step 5), publishing will also ask whether open drafts move to this version.
+    With move_drafts, reports still being drafted move to this version (answers kept by key).
     """
     version = QuestionnaireVersion.objects.select_for_update().get(pk=version.pk)
     if not version.is_draft:
@@ -56,6 +56,11 @@ def publish(version, user=None):
     version.published_at = timezone.now()
     version.published_by = user
     version.save(update_fields=["status", "published_at", "published_by", "updated_at"])
+    if move_drafts:
+        from apps.reports.services import move_to_version, open_drafts
+
+        for report in open_drafts(version):
+            move_to_version(report, version)
     return version
 
 
@@ -187,5 +192,7 @@ def delete_section(section):
 
 
 def open_report_drafts(version):
-    """Reports still being drafted on this version. Reports arrive in step 5; until then, none."""
-    return 0
+    """How many reports are still being drafted on other versions of this questionnaire."""
+    from apps.reports.services import open_drafts
+
+    return open_drafts(version).count()

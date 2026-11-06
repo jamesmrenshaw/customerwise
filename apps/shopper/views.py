@@ -88,7 +88,22 @@ def _detail_context(request, assignment, activity_form=None):
         }
         for i, s in enumerate(fieldwork.MANUAL_STAGES)
     ]
+    from apps.reports.models import Report
+    from apps.reports.services import missing_questions, questions
+
+    report = Report.objects.filter(assignment=assignment).first()
+    report_summary = None
+    if report:
+        total = questions(report).count()
+        report_summary = {
+            "report": report,
+            "answered": total - len(missing_questions(report)),
+            "total": total,
+        }
     return {
+        "report_summary": report_summary,
+        "evidence_count": assignment.evidence.current().count(),
+        "has_questionnaire": project.questionnaire_versions.filter(status="published").exists(),
         "assignment": assignment,
         "target": assignment.target,
         "project": project,

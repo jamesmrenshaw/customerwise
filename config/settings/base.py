@@ -27,6 +27,8 @@ INSTALLED_APPS = [
     "apps.projects",
     "apps.questionnaires",
     "apps.fieldwork",
+    "apps.reports",
+    "apps.evidence",
     "apps.staff",
     "apps.shopper",
 ]

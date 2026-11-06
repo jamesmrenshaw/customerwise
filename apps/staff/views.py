@@ -408,9 +408,12 @@ def version_publish(request, pk):
     drafts = questionnaires.open_report_drafts(version)
     form = forms.PublishForm(posted(request))
     if request.method == "POST" and not problems and form.is_valid():
-        questionnaires.publish(version, request.user)
+        # The radio defaults to moving drafts; it's only shown when there are drafts to move.
+        move = bool(drafts) and form.cleaned_data.get("move_drafts") is not False
+        questionnaires.publish(version, request.user, move_drafts=move)
+        moved = f" {drafts} draft report{'s' if drafts != 1 else ''} moved to it." if move else ""
         return done(
-            request, _builder_url(version), f"Version {version.number} published. New reports use it."
+            request, _builder_url(version), f"Version {version.number} published. New reports use it.{moved}"
         )
     return dialog(
         request,
