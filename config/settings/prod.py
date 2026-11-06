@@ -25,9 +25,11 @@ CSRF_COOKIE_SECURE = True
 # Transactional email through Brevo (D02): invitations and magic links.
 INSTALLED_APPS = [*INSTALLED_APPS, "anymail"]  # noqa: F405
 MAILERS = {"default": {"BACKEND": "anymail.backends.brevo.EmailBackend"}}
+# Missing email settings don't stop the site starting; the core.W001 check warns instead.
 ANYMAIL = {"BREVO_API_KEY": env("BREVO_API_KEY", default="")}
-DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL")
-SERVER_EMAIL = DEFAULT_FROM_EMAIL
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="")
+if DEFAULT_FROM_EMAIL:
+    SERVER_EMAIL = DEFAULT_FROM_EMAIL
 
 # Private Railway bucket (S3-compatible). Files are only reachable through
 # presigned links that expire after 5 minutes. Defaults allow the Docker build

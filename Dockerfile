@@ -20,8 +20,7 @@ COPY pyproject.toml uv.lock .python-version ./
 RUN uv sync --locked --no-dev --no-install-project
 
 COPY . .
-RUN DJANGO_SECRET_KEY=build-only-not-secret DEFAULT_FROM_EMAIL=build@localhost \
-    python manage.py collectstatic --noinput
+RUN DJANGO_SECRET_KEY=build-only-not-secret python manage.py collectstatic --noinput
 
 RUN useradd --create-home --uid 1000 app && chown -R app /app
 USER app
