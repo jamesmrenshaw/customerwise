@@ -43,6 +43,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField("email address", unique=True)
     full_name = models.CharField(max_length=200, blank=True)
     role = models.CharField(max_length=20, choices=Role, default=Role.SHOPPER)
+    # Shopper directory fields (CW-006, pilot minimum). Staff only.
+    reference = models.CharField(max_length=50, blank=True, help_text="Internal shopper reference.")
+    internal_notes = models.TextField(blank=True, help_text="Customer Wise staff only.")
     is_active = models.BooleanField(
         default=True,
         help_text="Untick to deactivate. The user is signed out on their next request.",

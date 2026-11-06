@@ -32,3 +32,32 @@ def _role_required(check):
 
 staff_required = _role_required(lambda user: user.is_staff)
 shopper_required = _role_required(lambda user: user.is_active and user.is_shopper)
+
+
+def assignments_for(user):
+    """Assignments a user may see.
+
+    Staff see all of them. Shoppers see their own open assignments plus those they closed as
+    "unable to complete". They lose access when an assignment is reassigned or withdrawn (D07).
+    """
+    from django.db.models import Q
+
+    from apps.fieldwork.models import Assignment
+
+    qs = Assignment.objects.select_related("target__project", "shopper")
+    if user.is_staff:
+        return qs
+    if not (user.is_authenticated and user.is_active and user.is_shopper):
+        return qs.none()
+    return qs.filter(shopper=user).filter(
+        Q(closed_at__isnull=True) | Q(closed_reason=Assignment.ClosedReason.UNABLE)
+    )
+
+
+def targets_for(user):
+    """Targets a user may see. Shoppers only see targets they're assigned to, never others' (MVP-01)."""
+    from apps.projects.models import Target
+
+    if user.is_staff:
+        return Target.objects.all()
+    return Target.objects.filter(pk__in=assignments_for(user).values("target")).distinct()

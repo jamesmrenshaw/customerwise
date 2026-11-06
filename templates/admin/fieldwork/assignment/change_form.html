@@ -1,0 +1,8 @@
+{% extends "admin/change_form.html" %}
+{% block object-tools-items %}
+  {% if original and original.is_open %}
+    <li><a href="{% url 'admin:fieldwork_assignment_reassign' original.pk %}">Reassign</a></li>
+    <li><a href="{% url 'admin:fieldwork_assignment_withdraw' original.pk %}">Withdraw</a></li>
+  {% endif %}
+  {{ block.super }}
+{% endblock %}

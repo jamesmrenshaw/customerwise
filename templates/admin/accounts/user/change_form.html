@@ -1,0 +1,14 @@
+{% extends "admin/change_form.html" %}
+{% load static %}
+{% block object-tools-items %}
+  {% if original and original.is_active %}
+    <li>
+      <form method="post" action="{% url 'admin:accounts_user_send_invitation' original.pk %}" class="cw-inline-form">
+        {% csrf_token %}
+        <button type="submit" class="historylink cw-tool-button">{% if original.invitations.exists %}Resend invitation{% else %}Send invitation{% endif %}</button>
+      </form>
+    </li>
+  {% endif %}
+  {{ block.super }}
+{% endblock %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'css/admin.css' %}">{% endblock %}

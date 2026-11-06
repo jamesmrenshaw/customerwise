@@ -1,0 +1,79 @@
+{
+  "source": "D06 (CUS-10) seed questionnaire, from the example Global Relay report, 5 Nov 2026",
+  "sections": [
+    {"title": "Key facts", "display_style": "key_facts", "questions": [
+      {"prompt": "Date and time of first enquiry", "answer_type": "datetime"},
+      {"prompt": "Method of first response", "answer_type": "short_text"},
+      {"prompt": "Date of discovery call (with any comment)", "answer_type": "short_text"}
+    ]},
+    {"title": "Commercial", "questions": [
+      {"prompt": "How does your commercial structure work?"},
+      {"prompt": "Do you charge on a per user, per channel basis?"},
+      {"prompt": "Is there a set-up cost?"},
+      {"prompt": "What's the minimum number of users?", "answer_type": "short_text"},
+      {"prompt": "What type of discounts is offered?"},
+      {"prompt": "How does the volume discount work?"},
+      {"prompt": "Can you give new references you have got in the last 12 months?", "guidance": "Note that you want \"successful\" suppliers only."}
+    ]},
+    {"title": "Features", "questions": [
+      {"prompt": "How do you separate personal and business communication from a BYOD?"},
+      {"prompt": "Can the user keep their mobile number?"},
+      {"prompt": "Do you have an integration with enterprise platforms like Teams?"},
+      {"prompt": "If yes, what channels are available to connect to (WhatsApp, SMS, etc.)?"}
+    ]},
+    {"title": "iMessage", "questions": [
+      {"prompt": "How do you capture native iMessage (blue bubble)?"},
+      {"prompt": "Can you walk me through the end-user onboarding experience?"},
+      {"prompt": "What happens to the message if the user turns off the iMessage feature?"},
+      {"prompt": "Do all messages sync to the user's iCloud?"},
+      {"prompt": "What happens when the user is not connected to the Wi-Fi and sends messages in SMS format?"}
+    ]},
+    {"title": "RCS", "questions": [
+      {"prompt": "Do you support RCS? Native iPhone? Android?"},
+      {"prompt": "How do you integrate with service providers/telcos?"}
+    ]},
+    {"title": "SMS", "questions": [
+      {"prompt": "How do you capture SMS messages?"},
+      {"prompt": "Any partnership with telcos?"}
+    ]},
+    {"title": "WhatsApp", "questions": [
+      {"prompt": "What capture methods do you support for WhatsApp?"},
+      {"prompt": "What are the limitations by device type, OS version, or deployment model?"}
+    ]},
+    {"title": "Contract Management", "questions": [
+      {"prompt": "How do I add my contacts from my cellphone's address book?"}
+    ]},
+    {"title": "Security Controls", "questions": [
+      {"prompt": "We've seen public discussions about security (wrappers, identity in groups, etc.). How secure is your solution?"},
+      {"prompt": "Do you support RBAC?"},
+      {"prompt": "Do you support BYOK?"},
+      {"prompt": "Do you have DLP capabilities (monitor/block sensitive data such as confidential info, personal data, card numbers)?"},
+      {"prompt": "How do you support regulated financial services requirements (audit trails, supervision, immutability/WORM, legal hold)?"}
+    ]},
+    {"title": "Onboarding", "questions": [
+      {"prompt": "How do you onboard users at scale?"},
+      {"prompt": "Can you link to Active Directory using SCIM?"},
+      {"prompt": "How do you update the user list (add/change/delete)?"}
+    ]},
+    {"title": "Contact Management", "questions": [
+      {"prompt": "How does a user add contacts from their phone's address book?"},
+      {"prompt": "Are contacts stored locally, in the cloud, or synced from directory?"}
+    ]},
+    {"title": "AI Capabilities", "questions": [
+      {"prompt": "What AI capabilities do you offer today?"},
+      {"prompt": "How can we help brokers work faster/better using messaging data?"},
+      {"prompt": "What automation actions can be triggered from these channels?"},
+      {"prompt": "What AI-powered insights can we extract from messaging data?"},
+      {"prompt": "Do you integrate with external AI agents / third-party AI tools?"}
+    ]},
+    {"title": "Product Roadmap", "questions": [
+      {"prompt": "What key features will you release in the next few months that could matter for us?"},
+      {"prompt": "What is on your roadmap for regulated financial services (surveillance, eDiscovery, Purview alignment, etc.)?"}
+    ]},
+    {"title": "Subjective Feedback", "questions": [
+      {"prompt": "As an industry expert, who procures solutions for their clients, please feedback on the customer experience provided by the target company during your experience, and any ways in which this would have influenced your recommendation."},
+      {"prompt": "What were the key strengths of this vendor?"},
+      {"prompt": "What were the key weaknesses of this vendor?"}
+    ]}
+  ]
+}
