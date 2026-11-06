@@ -5,6 +5,7 @@ GROUPS = {
     "setup": ("Setup", ("client.", "project.", "brief.", "target.", "questionnaire.")),
     "fieldwork": ("Fieldwork", ("assignment.", "evidence.")),
     "reports": ("Reports", ("report.",)),
+    "system": ("System", ("system.",)),
 }
 
 
@@ -103,4 +104,11 @@ def describe(event):
             + (f" with {files} evidence file{'s' if files != 1 else ''}" if files else "")
             + f" ({d.get('filename')})"
         )
+    if a == "system.backup":
+        removed = len(d.get("removed") or [])
+        return f"Nightly database backup {d.get('file')} ({int(d.get('size') or 0) // 1024:,} KB)" + (
+            f"; removed {removed} older backup{'s' if removed != 1 else ''}" if removed else ""
+        )
+    if a == "system.restore":
+        return f"Database restored from {d.get('file')}"
     return a.replace(".", " ").replace("_", " ").capitalize()
