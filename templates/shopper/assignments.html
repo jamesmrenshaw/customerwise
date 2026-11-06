@@ -12,6 +12,13 @@
   {% endif %}
 </div>
 
+{% for a in returned %}
+  <div class="banner banner--warn row-between" role="status">
+    <div><strong>Report returned for changes: {{ a.target.name }}</strong><div class="small">Customer Wise left {{ a.returned_count }} comment{{ a.returned_count|pluralize }}.</div></div>
+    <a class="btn" href="{% url 'reports:report' a.pk %}">Read comments and edit</a>
+  </div>
+{% endfor %}
+
 <form class="filters" method="get">
   <div class="field">
     <label for="project">Project</label>
@@ -38,7 +45,10 @@
         <tr>
           <td>
             <a class="strong" href="{% url 'shopper:assignment' a.pk %}">{{ a.target.name }}</a>
-            {% if a.target.added_by_shopper and a.target.added_by_id == user.pk %}<div><span class="tag tag--shopper">Added by you</span></div>{% endif %}
+            <div class="tag-stack">
+              {% if a.returned %}<span class="tag tag--warn">Returned: {{ a.returned_count }} comment{{ a.returned_count|pluralize }}</span>{% endif %}
+              {% if a.target.added_by_shopper and a.target.added_by_id == user.pk %}<span class="tag tag--shopper">Added by you</span>{% endif %}
+            </div>
           </td>
           <td class="muted">{{ a.target.project.shopper_facing_name }}</td>
           <td><span class="tag {{ a|stage_class }}">{{ a|stage_label }}</span>{% if a.unable_reason %}<div class="muted small">{{ a.get_unable_reason_display }}</div>{% endif %}</td>

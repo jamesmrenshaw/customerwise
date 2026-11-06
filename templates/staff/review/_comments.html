@@ -1,0 +1,24 @@
+{% for c in item.comments %}
+  <div class="review-comment">
+    <div class="review-comment__head"><strong>Your comment</strong> <span class="muted small">· not sent yet</span></div>
+    <form method="post" action="{% url 'staff:comment_update' c.pk %}" class="stack">
+      {% csrf_token %}
+      <label class="visually-hidden" for="c-{{ c.pk }}">Edit comment</label>
+      <textarea class="input" id="c-{{ c.pk }}" name="text" rows="2">{{ c.text }}</textarea>
+      <div class="row"><button class="btn btn--sm">Save</button><button class="btn btn--sm btn--link" name="delete" value="1">Delete</button></div>
+    </form>
+  </div>
+{% endfor %}
+{% if can_review %}
+  {% if item.commenting %}
+    <form method="post" action="{% url 'staff:comment_add' report.pk %}" class="review-comment review-comment--new stack">
+      {% csrf_token %}
+      <input type="hidden" name="question" value="{{ item.key }}">
+      <label class="small strong" for="new-{{ item.key }}">Comment for the shopper</label>
+      <textarea class="input" id="new-{{ item.key }}" name="text" rows="3" autofocus></textarea>
+      <div class="row"><button class="btn btn--sm btn--primary">Add comment</button><a class="btn btn--sm" href="?#q-{{ item.key }}">Cancel</a></div>
+    </form>
+  {% elif not item.comments %}
+    <a class="review-comment__add" href="?edit={{ item.key }}#q-{{ item.key }}" aria-label="Add a comment on: {{ item.prompt }}">+ Add comment</a>
+  {% endif %}
+{% endif %}

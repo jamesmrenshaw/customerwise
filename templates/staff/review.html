@@ -1,0 +1,95 @@
+{% extends "base.html" %}{% load staff_tags %}
+{% block title %}Review: {{ assignment.target.name }} · Customer Wise{% endblock %}
+{% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb"><a href="{% url 'staff:projects' %}">Projects</a> / <a href="{% url 'staff:fieldwork' project.pk %}">{{ project.internal_name }}</a> / <span>{{ assignment.target.name }}</span></nav>
+<div class="page-head" id="review">
+  <div>
+    <div class="page-head__title">
+      <h1>{{ assignment.target.name }}</h1>
+      <span class="tag {% if report.status == 'submitted' %}tag--review{% elif report.status == 'returned' %}tag--warn{% elif report.status == 'accepted' %}tag--done{% else %}tag--active{% endif %}">{% if report.status == "submitted" %}Awaiting review{% else %}{{ report.get_status_display }}{% endif %}</span>
+    </div>
+    <p class="lead">Shopper: {{ assignment.shopper }} · Submitted {{ submission.created_at|date:"j M, H:i" }} · Version {{ submission.number }} · Questionnaire v{{ submission.snapshot.questionnaire_version }}</p>
+  </div>
+  <div class="row">
+    <button class="btn" disabled title="Export comes in the next build step">Export…</button>
+    {% if can_review %}
+      {% url 'staff:return_report' report.pk as ret_url %}
+      <a class="btn btn--warn" href="{{ ret_url }}" hx-get="{{ ret_url }}" hx-target="#modal">Return with comments ({{ draft_count }})</a>
+      <form method="post" action="{% url 'staff:accept_report' report.pk %}">{% csrf_token %}<button class="btn btn--primary">Accept report</button></form>
+    {% endif %}
+  </div>
+</div>
+{% if report.status == "returned" %}<div class="banner banner--warn">Returned to {{ assignment.shopper }} for changes. You can review it again when they resubmit.</div>{% endif %}
+{% if report.status == "accepted" %}<div class="banner banner--success">Accepted {{ report.accepted_at|date:"j M Y" }} by {{ report.accepted_by }}.</div>{% endif %}
+{% if can_review %}<p class="muted small">Add comments next to the questions that need changes, then return the report. Comments aren't sent to the shopper until you return it.</p>{% endif %}
+
+<div class="layout-split">
+  <article class="card review-doc layout-split__main" aria-label="Submitted report">
+    <p class="eyebrow">Report as submitted · the export adds a title page</p>
+    <h2 class="review-doc__title">{{ assignment.target.name }}</h2>
+
+    {% if document.key_facts %}
+      <section class="key-facts" aria-label="Key facts">
+        <dl>
+          {% for item in document.key_facts %}
+            <div class="key-facts__row" id="q-{{ item.key }}"><dt>{{ item.prompt }}</dt><dd><span>{% if item.blank %}<span class="muted">No answer</span>{% else %}{{ item.html }}{% endif %}</span>{% include "staff/review/_comments.html" %}</dd></div>
+          {% endfor %}
+        </dl>
+      </section>
+    {% endif %}
+
+    {% for section in document.sections %}
+      <section class="review-section">
+        <h3>{{ section.title }}</h3>
+        {% if section.style == "qa_table" %}
+          <table class="qa-table"><tbody>
+            {% for item in section.items %}
+              <tr id="q-{{ item.key }}"><th scope="row">{{ item.prompt }}</th>
+                <td><div class="rich-content">{% if item.blank %}<span class="muted">No answer</span>{% else %}{{ item.html }}{% endif %}</div>{% include "staff/review/_comments.html" %}</td></tr>
+            {% endfor %}
+          </tbody></table>
+        {% elif section.style == "headings" %}
+          {% for item in section.items %}
+            <div class="review-item" id="q-{{ item.key }}"><h4>{{ item.prompt }}</h4>
+              <div class="rich-content">{% if item.blank %}<span class="muted">No answer</span>{% else %}{{ item.html }}{% endif %}</div>{% include "staff/review/_comments.html" %}</div>
+          {% endfor %}
+        {% else %}
+          {% for item in section.items %}
+            <div class="review-item" id="q-{{ item.key }}"><div class="rich-content" title="{{ item.prompt }}">{% if item.blank %}<span class="muted">No answer</span>{% else %}{{ item.html }}{% endif %}</div>{% include "staff/review/_comments.html" %}</div>
+          {% endfor %}
+        {% endif %}
+      </section>
+    {% endfor %}
+  </article>
+
+  <aside class="layout-split__side stack-lg">
+    <section class="card" aria-labelledby="ev-h">
+      <h2 id="ev-h">Evidence ({{ evidence|length }})</h2>
+      <ul class="plain-list small">
+        {% for e in evidence %}<li><a href="{% url 'reports:evidence_download' e.pk %}">{{ e.original_name }}</a><div class="muted">{{ e.get_category_display }} · {{ e.size|filesizeformat }}</div></li>{% empty %}<li class="muted">No evidence with this submission.</li>{% endfor %}
+      </ul>
+      <p class="muted small">Download links expire after 5 minutes.</p>
+    </section>
+    <section class="card" aria-labelledby="notes-h">
+      <h2 id="notes-h">Shopper's notes</h2>
+      {% if notes %}<p class="small">{{ notes|linebreaksbr }}</p>{% else %}<p class="muted small">None.</p>{% endif %}
+      <p class="muted small">Never included in exports.</p>
+    </section>
+    <section class="card" aria-labelledby="hist-h">
+      <h2 id="hist-h">History</h2>
+      <ol class="plain-list divided small">
+        {% if report.accepted_at %}<li><strong>Accepted</strong> by {{ report.accepted_by }} · {{ report.accepted_at|date:"j M" }}</li>{% endif %}
+        {% for s in submissions %}
+          {% with returned=s.comments.all %}
+            {% if returned %}<li><strong>Returned</strong> v{{ s.number }} · {{ returned.0.sent_at|date:"j M" }}<div class="muted">{{ returned|length }} comment{{ returned|length|pluralize }}</div>
+              <details><summary>Show comments</summary><ul class="plain-list">{% for c in returned %}<li>{% if c.question_key %}<span class="muted">{{ c.question.prompt|default:c.question_key|truncatechars:60 }}:</span> {% else %}<span class="muted">Overall:</span> {% endif %}{{ c.text }}</li>{% endfor %}</ul></details></li>{% endif %}
+          {% endwith %}
+          <li><strong>Submitted</strong> v{{ s.number }} by {{ s.submitted_by }} · {{ s.created_at|date:"j M" }}</li>
+        {% endfor %}
+        <li><strong>Assigned</strong> to {{ assignment.shopper }} · {{ assignment.created_at|date:"j M" }}<div class="muted">{% if assignment.approval_confirmed_offplatform %}Client approval confirmed off-platform{% else %}Target added by the shopper{% endif %}</div></li>
+      </ol>
+      <a class="small" href="{% url 'staff:assignment' assignment.pk %}">See the full activity log</a>
+    </section>
+  </aside>
+</div>
+{% endblock %}

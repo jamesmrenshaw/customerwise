@@ -1,0 +1,52 @@
+{% extends "base.html" %}{% load staff_tags %}
+{% block title %}Fieldwork · {{ project.internal_name }}{% endblock %}
+{% block content %}
+{% include "staff/_project_header.html" %}
+<p class="muted small">Shoppers see: <strong>{{ project.shopper_facing_name }}</strong> · Client name hidden from shoppers</p>
+
+<div class="tiles">
+  {% for label, value, cls in tiles %}
+    <div class="tile {{ cls }}"><div class="tile__label">{{ label }}</div><div class="tile__value">{{ value }}</div></div>
+  {% endfor %}
+</div>
+
+<div class="toolbar">
+  <div class="filter-chips" role="group" aria-label="Filter assignments">
+    {% for key, label, count in filters %}
+      <a class="filter-chip" href="?show={{ key }}" {% if key == shown %}aria-current="true"{% endif %}>{{ label }} <span>{{ count }}</span></a>
+    {% endfor %}
+  </div>
+  <a class="btn" href="{% url 'staff:targets' project.pk %}">Manage targets and shoppers</a>
+</div>
+
+<div class="table-wrap">
+  <table class="table">
+    <thead><tr><th>Target</th><th>Shopper</th><th>Stage</th><th>Flags</th><th>Last activity</th><th>Next planned</th><th><span class="visually-hidden">Actions</span></th></tr></thead>
+    <tbody>
+      {% for r in rows %}{% with a=r.a %}
+        <tr>
+          <td><strong>{{ a.target.name }}</strong><div class="muted small">{{ a.target.website|default:"No website" }}</div></td>
+          <td>{{ a.shopper }}</td>
+          <td><span class="tag {{ a|stage_class }}">{{ a|stage_label }}</span>{% if r.unable %}<div class="muted small">{{ a.get_unable_reason_display }}{% if a.unable_note %} · “{{ a.unable_note|truncatechars:40 }}”{% endif %}</div>{% endif %}</td>
+          <td><div class="tag-stack">
+            {% if r.awaiting_review %}<span class="tag tag--review">Awaiting review</span>{% endif %}
+            {% if r.returned %}<span class="tag tag--warn">Returned</span>{% endif %}
+            {% if r.accepted %}<span class="tag tag--done">Accepted</span>{% endif %}
+            {% if r.stalled %}<span class="tag tag--stalled">Stalled · {{ r.stalled_days }} days</span>{% endif %}
+            {% if r.by_shopper %}<span class="tag tag--shopper">Added by shopper</span>{% endif %}
+          </div></td>
+          <td>{{ a.last_done|date:"j M"|default:"—" }}</td>
+          <td>{{ a.next_planned|date:"j M, H:i"|default:"Nothing planned" }}</td>
+          <td class="table__actions">
+            {% if r.report and r.report.submitted_at %}<a class="strong" href="{% url 'staff:review' r.report.pk %}">{% if r.awaiting_review %}Review report{% else %}View report{% endif %}</a>{% endif %}
+            <a href="{% url 'staff:assignment' a.pk %}">Open</a>
+          </td>
+        </tr>
+      {% endwith %}{% empty %}
+        <tr><td colspan="7" class="table__empty">{% if shown == "all" %}No assignments yet. <a href="{% url 'staff:targets' project.pk %}">Assign shoppers to targets</a>.{% else %}No assignments match this filter.{% endif %}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="muted small">An assignment is flagged as stalled after 7 days with no logged activity or stage change. Complete and unable-to-complete assignments are never flagged.</p>
+{% endblock %}

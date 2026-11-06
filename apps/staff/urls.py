@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views
+from . import review_views, views
 
 app_name = "staff"
 
@@ -9,6 +9,13 @@ urlpatterns = [
     path("projects/new/", views.project_create, name="project_create"),
     path("projects/<uuid:pk>/", views.project_home, name="project"),
     path("projects/<uuid:pk>/details/", views.project_details, name="project_details"),
+    path("projects/<uuid:pk>/fieldwork/", review_views.fieldwork, name="fieldwork"),
+    path("staff/assignments/<uuid:pk>/", review_views.assignment, name="assignment"),
+    path("staff/reports/<uuid:pk>/", review_views.review_report, name="review"),
+    path("staff/reports/<uuid:pk>/comments/", review_views.comment_add, name="comment_add"),
+    path("staff/comments/<uuid:pk>/", review_views.comment_update, name="comment_update"),
+    path("staff/reports/<uuid:pk>/return/", review_views.return_report, name="return_report"),
+    path("staff/reports/<uuid:pk>/accept/", review_views.accept_report, name="accept_report"),
     path("projects/<uuid:pk>/targets/", views.targets, name="targets"),
     path("projects/<uuid:pk>/targets/add/", views.target_add, name="target_add"),
     path("projects/<uuid:pk>/questionnaire/", views.questionnaire, name="questionnaire"),

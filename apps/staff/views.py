@@ -99,7 +99,7 @@ def project_create(request):
 
 @staff_required
 def project_home(request, pk):
-    return redirect("staff:targets", pk=pk)
+    return redirect("staff:fieldwork", pk=pk)
 
 
 @staff_required

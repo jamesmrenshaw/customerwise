@@ -8,7 +8,7 @@
 </div>
 {% if project %}
 <nav class="tabs" aria-label="Project sections">
-  <span class="tabs__soon" title="Fieldwork monitoring is the next build step">Fieldwork <span class="muted">(soon)</span></span>
+  <a href="{% url 'staff:fieldwork' project.pk %}" {% if tab == "fieldwork" %}aria-current="page"{% endif %}>Fieldwork</a>
   <a href="{% url 'staff:targets' project.pk %}" {% if tab == "targets" %}aria-current="page"{% endif %}>Targets and shoppers</a>
   <a href="{% url 'staff:questionnaire' project.pk %}" {% if tab == "questionnaire" %}aria-current="page"{% endif %}>Questionnaire</a>
   <a href="{% url 'staff:project_details' project.pk %}" {% if tab == "details" %}aria-current="page"{% endif %}>Details and brief</a>

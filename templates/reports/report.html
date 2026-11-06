@@ -11,7 +11,7 @@
 <div class="page-head">
   <div class="page-head__title">
     <h1>Report: {{ target.name }}</h1>
-    <span class="tag {% if report.status == 'returned' %}tag--warn{% elif report.status == 'submitted' %}tag--done{% else %}tag--active{% endif %}">{{ report.get_status_display }}</span>
+    <span class="tag {% if report.status == 'returned' %}tag--warn{% elif report.status == 'submitted' or report.status == 'accepted' %}tag--done{% else %}tag--active{% endif %}">{{ report.get_status_display }}</span>
     <span class="muted small">Questionnaire version {{ report.questionnaire_version.number }}</span>
   </div>
 </div>
@@ -27,6 +27,21 @@
     </ul>
   </div>
 {% endif %}
+{% if comment_list %}
+  <section class="returned-panel" aria-labelledby="ret-h">
+    <h2 id="ret-h">Comments from Customer Wise</h2>
+    <p class="small">{{ comment_list.0.comment.author|default:"Customer Wise" }} returned this report on {{ comment_list.0.comment.sent_at|date:"j M" }}. Fix each point, then resubmit.</p>
+    <ol>
+      {% for c in comment_list %}
+        <li>{% if c.section %}<a class="strong" href="?s={{ c.section.pk }}#q-{{ c.comment.question_id }}">{{ c.section.title }}: {{ c.prompt|truncatechars:70 }}</a>{% else %}<strong>Overall</strong>{% endif %}
+          <div>{{ c.comment.text|linebreaksbr }}</div></li>
+      {% endfor %}
+    </ol>
+  </section>
+{% endif %}
+{% if report.status == "accepted" %}
+  <div class="banner banner--success">Accepted by Customer Wise on {{ report.accepted_at|date:"j M Y" }}. Thank you.</div>
+{% endif %}
 {% if not editable and report.status == "submitted" %}
   <div class="banner banner--success">Submitted {{ report.submitted_at|date:"j M Y, H:i" }}. You can no longer change it unless Customer Wise returns it.</div>
 {% endif %}
@@ -36,7 +51,7 @@
     <ul>
       {% for n in nav %}
         <li><a href="?s={{ n.section.pk }}" {% if n.section == section and not view %}aria-current="page"{% endif %}>
-          <span>{{ n.section.title }}</span>
+          <span>{{ n.section.title }}{% if n.has_comment %} <span class="comment-dot" aria-label="has comments">●</span>{% endif %}</span>
           <span class="small {% if n.complete %}text-success{% elif problems %}text-error{% else %}muted{% endif %}">{% if n.complete %}Done{% else %}{{ n.done }}/{{ n.count }}{% endif %}</span>
         </a></li>
       {% endfor %}
@@ -75,6 +90,7 @@
             <div class="question{% if item.missing %} question--missing{% endif %}" id="q-{{ q.pk }}">
               <label class="question__prompt" id="l-{{ q.pk }}" for="f-{{ q.pk }}">{{ item.n }}. {{ q.prompt }}</label>
               {% if q.guidance %}<p class="question__guidance">Guidance: {{ q.guidance }}</p>{% endif %}
+              {% for c in item.comments %}<div class="review-comment"><strong>Customer Wise:</strong> {{ c.text|linebreaksbr }}</div>{% endfor %}
               {% url 'reports:autosave' report.pk q.pk as save_url %}
               {% if q.answer_type == "long_text" %}
                 {% if editable %}

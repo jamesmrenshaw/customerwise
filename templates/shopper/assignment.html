@@ -13,6 +13,12 @@
   {% endif %}
 </div>
 
+{% if assignment.returned %}
+  <div class="banner banner--warn row-between" role="status">
+    <div><strong>Report returned for changes</strong><div class="small">Customer Wise left {{ returned_count }} comment{{ returned_count|pluralize }}. Your stage is back to Report drafting.</div></div>
+    <a class="btn" href="{% url 'reports:report' assignment.pk %}">Read comments</a>
+  </div>
+{% endif %}
 {% if assignment.closed_reason == "unable" %}
   <div class="banner banner--info"><strong>Closed as unable to complete:</strong> {{ assignment.get_unable_reason_display }}.{% if assignment.unable_note %} {{ assignment.unable_note }}{% endif %} Ask Customer Wise if it needs reopening.</div>
 {% elif complete %}

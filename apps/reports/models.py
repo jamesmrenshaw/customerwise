@@ -12,6 +12,7 @@ class Report(BaseModel):
         DRAFT = "draft", "Draft"
         SUBMITTED = "submitted", "Submitted"
         RETURNED = "returned", "Returned for changes"
+        ACCEPTED = "accepted", "Accepted"
 
     assignment = models.OneToOneField("fieldwork.Assignment", on_delete=models.PROTECT, related_name="report")
     questionnaire_version = models.ForeignKey(
@@ -26,6 +27,10 @@ class Report(BaseModel):
         help_text="Answers to questions removed when the draft moved to a newer questionnaire version.",
     )
     submitted_at = models.DateTimeField(null=True, blank=True)
+    accepted_at = models.DateTimeField(null=True, blank=True)
+    accepted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
 
     def __str__(self):
         return f"Report on {self.assignment.target}"
@@ -78,3 +83,34 @@ class ReportSubmission(BaseModel):
 
     def __str__(self):
         return f"{self.report} v{self.number}"
+
+
+class ReviewComment(BaseModel):
+    """A Customer Wise comment on a submitted report (CW-046, CW-048).
+
+    Comments are drafts (visible to staff only) until the report is returned; returning stamps
+    them with sent_at and the submission they refer to, and the shopper then sees them.
+    A comment without a question is the overall message for that return.
+    """
+
+    report = models.ForeignKey(Report, on_delete=models.CASCADE, related_name="comments")
+    submission = models.ForeignKey(
+        ReportSubmission, on_delete=models.CASCADE, null=True, blank=True, related_name="comments"
+    )
+    question = models.ForeignKey(
+        "questionnaires.Question", on_delete=models.PROTECT, null=True, blank=True, related_name="+"
+    )
+    question_key = models.CharField(
+        max_length=80, blank=True, help_text="Stable across questionnaire versions."
+    )
+    text = models.TextField()
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="+"
+    )
+    sent_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["created_at"]
+
+    def __str__(self):
+        return f"Comment on {self.report}"

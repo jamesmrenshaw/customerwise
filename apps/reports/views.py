@@ -48,6 +48,21 @@ def _context(request, report, problems=None):
     current = next((s for s in sections if str(s.pk) == request.GET.get("s")), None) or (
         sections[0] if sections else None
     )
+    from .review import returned_comments
+
+    comments = list(returned_comments(report))
+    by_key = {}
+    for c in comments:
+        by_key.setdefault(c.question_key, []).append(c)
+    section_of = {q.key: q.section for s in sections for q in s.questions.all()}
+    comment_list = [
+        {
+            "comment": c,
+            "section": section_of.get(c.question_key),
+            "prompt": c.question.prompt if c.question else "",
+        }
+        for c in comments
+    ]
     total = answered = 0
     nav = []
     for s in sections:
@@ -55,7 +70,15 @@ def _context(request, report, problems=None):
         done_here = sum(1 for q in qs if answers.get(q.pk) and answers[q.pk].is_answered)
         total += len(qs)
         answered += done_here
-        nav.append({"section": s, "done": done_here, "count": len(qs), "complete": done_here == len(qs)})
+        nav.append(
+            {
+                "section": s,
+                "done": done_here,
+                "count": len(qs),
+                "complete": done_here == len(qs),
+                "has_comment": any(q.key in by_key for q in qs),
+            }
+        )
     missing_ids = {p["question"].pk for p in problems or [] if p["kind"] == "question"}
     items = []
     if current and not view:
@@ -68,11 +91,13 @@ def _context(request, report, problems=None):
                     "text": a.text if a else "",
                     "datetime": a.datetime_value if a else None,
                     "missing": q.pk in missing_ids,
+                    "comments": by_key.get(q.key, []),
                 }
             )
     index = sections.index(current) if current in sections else 0
     return {
         "report": report,
+        "comment_list": comment_list,
         "assignment": report.assignment,
         "target": report.assignment.target,
         "editable": services.can_edit(report),

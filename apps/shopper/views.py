@@ -52,11 +52,21 @@ def assignment_list(request):
         qs = qs.filter(closed_at__isnull=True).exclude(stage=Assignment.Stage.COMPLETE)
     elif stage == "closed":
         qs = qs.filter(Q(closed_at__isnull=False) | Q(stage=Assignment.Stage.COMPLETE))
+    from apps.reports.review import returned_comments
+
+    assignments = list(qs.select_related("report").order_by("closed_at", "target__name"))
+    returned = []
+    for a in assignments:
+        report = getattr(a, "report", None)
+        a.returned_count = returned_comments(report).count() if report and a.returned else 0
+        if a.returned:
+            returned.append(a)
     return render(
         request,
         "shopper/assignments.html",
         {
-            "assignments": qs.order_by("closed_at", "target__name"),
+            "returned": returned,
+            "assignments": assignments,
             "projects": projects_qs.order_by("shopper_facing_name"),
             "project_id": project_id,
             "stage": stage,
@@ -100,7 +110,10 @@ def _detail_context(request, assignment, activity_form=None):
             "answered": total - len(missing_questions(report)),
             "total": total,
         }
+    from apps.reports.review import returned_comments
+
     return {
+        "returned_count": returned_comments(report).count() if report else 0,
         "report_summary": report_summary,
         "evidence_count": assignment.evidence.current().count(),
         "has_questionnaire": project.questionnaire_versions.filter(status="published").exists(),

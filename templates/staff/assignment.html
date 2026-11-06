@@ -1,0 +1,67 @@
+{% extends "base.html" %}{% load staff_tags %}
+{% block title %}{{ assignment.target.name }} · {{ project.internal_name }}{% endblock %}
+{% block content %}
+{% include "staff/_project_header.html" %}
+<nav class="breadcrumb" aria-label="Breadcrumb"><a href="{% url 'staff:fieldwork' project.pk %}">Fieldwork</a> / <span>{{ assignment.target.name }}</span></nav>
+<div class="page-head">
+  <div>
+    <h2 class="page-subtitle">{{ assignment.target.name }} <span class="tag {{ assignment|stage_class }}">{{ assignment|stage_label }}</span>
+      {% if row.stalled %}<span class="tag tag--stalled">Stalled · {{ row.stalled_days }} days</span>{% endif %}</h2>
+    <p class="lead">Shopper: {{ assignment.shopper }} · {% if assignment.approval_confirmed_offplatform %}client approval confirmed {{ assignment.created_at|date:"j M Y" }}{% if assignment.approval_note %} ({{ assignment.approval_note }}){% endif %}{% else %}target added by the shopper{% endif %}</p>
+  </div>
+  {% if report and report.submitted_at %}<a class="btn btn--primary" href="{% url 'staff:review' report.pk %}">{% if report.status == "submitted" %}Review report{% else %}View report{% endif %}</a>{% endif %}
+</div>
+{% if not assignment.is_open %}
+  <div class="banner banner--info"><strong>Closed: {{ assignment.get_closed_reason_display }}.</strong>{% if assignment.unable_reason %} {{ assignment.get_unable_reason_display }}.{% endif %} {{ assignment.unable_note|default:assignment.closed_note }}</div>
+{% endif %}
+
+<div class="layout-split">
+  <section class="card layout-split__main" aria-labelledby="act-h">
+    <h2 id="act-h">Activity log</h2>
+    <p class="muted small">Everything the shopper logged, including later edits and deleted entries (kept for staff only).</p>
+    <ul class="activity-list">
+      {% for a in activities %}
+        <li class="activity{% if a.is_planned %} activity--planned{% endif %}{% if a.deleted_at %} activity--deleted{% endif %}">
+          <div class="activity__when"><strong>{{ a.occurred_at|date:"j M" }}</strong><div class="muted small">{{ a.occurred_at|date:"H:i" }} · {{ a.get_type_display }}</div>
+            {% if a.is_planned %}<span class="tag tag--active">Planned</span>{% endif %}{% if a.deleted_at %}<span class="tag tag--unable">Deleted {{ a.deleted_at|date:"j M" }}</span>{% endif %}</div>
+          <div class="activity__body">
+            {{ a.notes|linebreaksbr }}
+            {% if a.contact_job_title %}<div class="muted small">With: {{ a.contact_job_title }}</div>{% endif %}
+            {% if a.edits %}
+              <details class="small"><summary>Edited {{ a.edits|length }} time{{ a.edits|length|pluralize }}</summary>
+                <ol class="plain-list divided">{% for h in a.edits %}<li><span class="muted">{{ h.history_date|date:"j M, H:i" }}:</span> {{ h.notes|truncatechars:160 }}</li>{% endfor %}</ol>
+              </details>
+            {% endif %}
+          </div>
+        </li>
+      {% empty %}
+        <li class="muted">Nothing logged yet.</li>
+      {% endfor %}
+    </ul>
+  </section>
+  <aside class="layout-split__side stack-lg">
+    <section class="card" aria-labelledby="rep-h">
+      <h2 id="rep-h">Report</h2>
+      {% if report %}
+        <span class="tag {% if report.status == 'submitted' %}tag--review{% elif report.status == 'returned' %}tag--warn{% elif report.status == 'accepted' %}tag--done{% else %}tag--active{% endif %}">{% if report.status == "submitted" %}Awaiting review{% else %}{{ report.get_status_display }}{% endif %}</span>
+        <dl class="facts small">
+          <dt>Submitted</dt><dd>{% if report.submitted_at %}{{ report.submitted_at|date:"j M Y" }} (v{{ report.version_no }}){% else %}Not yet{% endif %}</dd>
+          {% if report.accepted_at %}<dt>Accepted</dt><dd>{{ report.accepted_at|date:"j M Y" }} by {{ report.accepted_by }}</dd>{% endif %}
+        </dl>
+      {% else %}<p class="muted">Not started.</p>{% endif %}
+    </section>
+    <section class="card" aria-labelledby="ev-h">
+      <h2 id="ev-h">Evidence ({{ evidence|length }})</h2>
+      <ul class="plain-list small">
+        {% for e in evidence %}<li><a href="{% url 'reports:evidence_download' e.pk %}">{{ e.original_name }}</a> <span class="muted">· {{ e.get_category_display }}</span>{% if e.deleted_at %} <span class="tag tag--unable">Deleted</span>{% endif %}</li>{% empty %}<li class="muted">None.</li>{% endfor %}
+      </ul>
+    </section>
+    {% if earlier %}
+      <section class="card" aria-labelledby="earlier-h">
+        <h2 id="earlier-h">Earlier assignments</h2>
+        <ul class="plain-list small">{% for e in earlier %}<li><a href="{% url 'staff:assignment' e.pk %}">{{ e.shopper }}</a> <span class="muted">· {% if e.closed_reason %}{{ e.get_closed_reason_display }} {{ e.closed_at|date:"j M" }}{% else %}open{% endif %}</span></li>{% endfor %}</ul>
+      </section>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}

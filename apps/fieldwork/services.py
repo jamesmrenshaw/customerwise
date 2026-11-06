@@ -131,6 +131,7 @@ def mark_unable(assignment, reason, note=""):
         raise ValidationError("Choose a reason.")
     assignment.unable_reason = reason
     assignment.unable_note = note
+    assignment.save(update_fields=["unable_reason", "unable_note", "updated_at"])
     _close(assignment, Assignment.ClosedReason.UNABLE, note)
     return assignment
 

@@ -1,0 +1,11 @@
+{% extends "staff/dialogs/_base.html" %}
+{% block action_url %}{% url 'staff:return_report' report.pk %}{% endblock %}
+{% block hx_url %}{% url 'staff:return_report' report.pk %}{% endblock %}
+{% block cancel_url %}{% url 'staff:review' report.pk %}{% endblock %}
+{% block title %}Return report to {{ report.assignment.shopper }}{% endblock %}
+{% block action_label %}Return report{% endblock %}
+{% block body %}
+  <p>{% if drafts %}Your {{ drafts }} comment{{ drafts|pluralize }} will be shown next to the question{{ drafts|pluralize }} they refer to.{% else %}You haven't added any comments. Add an overall message so {{ report.assignment.shopper }} knows what to change.{% endif %}</p>
+  {% include "staff/_field.html" with field=form.message %}
+  <p class="muted small">{{ report.assignment.shopper }} can edit answers and evidence again, and sees the report as returned in their assignment list. No email is sent in the pilot.</p>
+{% endblock %}

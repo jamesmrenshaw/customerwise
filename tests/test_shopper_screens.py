@@ -138,6 +138,7 @@ def test_unable_to_complete_closes_but_stays_visible(as_sam, assignment):
     assert response.status_code == 204
     assignment.refresh_from_db()
     assert assignment.closed_reason == Assignment.ClosedReason.UNABLE
+    assert assignment.unable_reason == "no_response" and assignment.unable_note == "Four attempts"
     html = as_sam.get(reverse("shopper:assignments") + "?stage=closed").content.decode()
     assert "Global Relay" in html and "Unable to complete" in html
     detail = as_sam.get(reverse("shopper:assignment", args=[assignment.pk])).content.decode()
